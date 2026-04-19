@@ -1,3 +1,5 @@
+# The FastAPI containing our endpoints
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, get_db
@@ -20,7 +22,7 @@ def startup():
 
 @app.get("/api/posts/random", response_model=Post)
 def get_random_post():
-    """Return a random post from the database for the game."""
+    # Return a random post from the database for the game.
     with get_db() as conn:
         row = conn.execute(
             "SELECT * FROM posts ORDER BY RANDOM() LIMIT 1"

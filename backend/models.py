@@ -1,3 +1,5 @@
+# Models.py contains pydantic/schema models to describe incoming and outgoing data from the API.
+
 from pydantic import BaseModel
 from typing import Optional
 
@@ -6,9 +8,13 @@ class Post(BaseModel):
     id: str
     title: str
     body: str
-    verdict: Optional[str]
+    verdict: Optional[str]   # YTA | NTA | ESH | NAH — derived from comments
+    yta_count: int = 0
+    nta_count: int = 0
+    esh_count: int = 0
+    nah_count: int = 0
     score: Optional[int]
-    num_comments: Optional[int]
+    permalink: Optional[str]
 
 
 class VerdictSubmission(BaseModel):

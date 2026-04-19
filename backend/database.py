@@ -24,13 +24,17 @@ def init_db():
     with get_db() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS posts (
-                id          TEXT PRIMARY KEY,
+                id          TEXT PRIMARY KEY,  -- Reddit submission_id (varchar)
                 title       TEXT NOT NULL,
                 body        TEXT NOT NULL,
-                verdict     TEXT,
+                verdict     TEXT,              -- derived from comment voting: YTA/NTA/ESH/NAH
+                yta_count   INTEGER DEFAULT 0,
+                nta_count   INTEGER DEFAULT 0,
+                esh_count   INTEGER DEFAULT 0,
+                nah_count   INTEGER DEFAULT 0,
                 score       INTEGER,
-                num_comments INTEGER,
-                created_utc INTEGER
+                permalink   TEXT,
+                created_utc TEXT
             );
 
             CREATE TABLE IF NOT EXISTS user_verdicts (
