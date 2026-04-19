@@ -1,13 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { aitaScenarios } from "../data/aitaScenarios";
 import { Button } from "./ui/button";
 
+type Post = {
+  id: string;
+  title: string;
+  body: string;
+  verdict: string | null;
+  yta_count: number;
+  nta_count: number;
+  esh_count: number;
+  nah_count: number;
+  score: number | null;
+  permalink: string | null;
+};
+
 export function GamePage() {
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [userVote, setUserVote] = useState<"YTA" | "NTA" | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [post, setPost] = useState<Post | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPost() {
+      try {
+        const res = await fetch("/api/posts/random");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: Post = await res.json();
+        setPost(data);
+        console.log("Loaded post from backend:", data);
+      } catch (err) {
+        setFetchError(String(err));
+        console.error("Backend fetch failed:", err);
+      }
+    }
+    loadPost();
+  }, []);
 
   const currentScenario = aitaScenarios[currentScenarioIndex];
 
