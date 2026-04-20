@@ -23,3 +23,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# database files
+*.db
+
+# Python
+__pycache__

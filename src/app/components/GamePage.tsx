@@ -1,13 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { aitaScenarios } from "../data/aitaScenarios";
 import { Button } from "./ui/button";
+import { VisualizationsSection } from "./VisualizationsSection";
+
+type Post = {
+  id: string;
+  title: string;
+  body: string;
+  verdict: string | null;
+  yta_count: number;
+  nta_count: number;
+  esh_count: number;
+  nah_count: number;
+  score: number | null;
+  permalink: string | null;
+};
 
 export function GamePage() {
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [userVote, setUserVote] = useState<"YTA" | "NTA" | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [post, setPost] = useState<Post | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPost() {
+      try {
+        const res = await fetch("/api/posts/random");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: Post = await res.json();
+        setPost(data);
+        console.log("Loaded post from backend:", data);
+      } catch (err) {
+        setFetchError(String(err));
+        console.error("Backend fetch failed:", err);
+      }
+    }
+    loadPost();
+  }, []);
 
   const currentScenario = aitaScenarios[currentScenarioIndex];
 
@@ -44,6 +76,7 @@ export function GamePage() {
   const isGameComplete = currentScenarioIndex === aitaScenarios.length - 1 && userVote !== null;
 
   return (
+    <>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-400 via-pink-400 to-red-400 p-4 md:p-8">
       {/* Header with score */}
       <div className="text-center mb-8">
@@ -177,5 +210,9 @@ export function GamePage() {
         </div>
       </div>
     </div>
+
+    {/* Scroll down to view the visualizations section. I don't super like how it just turns into a blank white page - TODO for the future to fix this. */}
+    <VisualizationsSection />
+    </>
   );
 }
