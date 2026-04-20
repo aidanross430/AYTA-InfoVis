@@ -19,6 +19,49 @@ from database import init_db, get_db
 VERDICT_KEYWORDS = ["YTA", "NTA", "ESH", "NAH"]
 KEYWORD_PATTERN = re.compile(r"\b(YTA|NTA|ESH|NAH)\b", re.IGNORECASE)
 
+# Demographic tag — age+gender or gender+age inside brackets or parenthesis
+# Groups: (age_first, gender_first, gender_second, age_second)
+# One pair will be populated and the other will be null
+_TAG = (
+    r"[\[(]\s*(?:"
+    r"(\d{1,3})\s*(m(?:ale)?|f(?:emale)?|nb|non-?binary)"   # [25M] => [25, male, None, None]
+    r"|"
+    r"(m(?:ale)?|f(?:emale)?|nb|non-?binary)\s*,?\s*(\d{1,3})"  # [F25] => [female, 25, None, None]
+    r")\s*[\])]"
+)
+
+# It is assumed that any matches in the title will refer to the poster first
+_TITLE_DEMO = re.compile(_TAG, re.IGNORECASE)
+
+# In the body, require a personal identifier within 5 characters before the tag.
+# Covers: "I [25M]", "I'm (F30)", "me [NB21]", "I, [25M]", "I am a (30F), my (40f)"
+# The strict 5 character limit means it will include instances like "my [40f]" but NOT
+# instances like "my dad [M38]"
+_BODY_DEMO = re.compile(
+    r"\b(?:I(?:'m)?|[Mm]e|[Mm]y)\b[^[(\n]{0,5}" + _TAG,
+    re.IGNORECASE,
+)
+
+
+def _extract_demo(m: re.Match) -> str:
+    """Pull age+gender out of a _TAG match (works for both title and body patterns)."""
+    # Body pattern has a non-capturing lead group, so tag groups are offset by 0
+    # in the title pattern and share the same relative positions in both.
+    groups = m.groups()
+    # Find the last 4 groups which belong to the _TAG portion
+    age_a, gen_a, gen_b, age_b = groups[-4], groups[-3], groups[-2], groups[-1]
+    age, gender = (age_a, gen_a) if age_a is not None else (age_b, gen_b)
+    return f"{age}{_normalize_gender(gender)}"
+
+
+def _normalize_gender(raw: str) -> str:
+    r = raw.lower()
+    if r in ("m", "male"):
+        return "M"
+    if r in ("f", "female"):
+        return "F"
+    return "NB"
+
 
 def tally_verdicts(comments: list[tuple[str, int]]) -> dict[str, int]:
     """
@@ -36,6 +79,24 @@ def tally_verdicts(comments: list[tuple[str, int]]) -> dict[str, int]:
                 totals[keyword] += max(score or 0, 0)
     return totals
 
+def poster_demographic(title: str, body: str) -> str:
+    """
+    Parse the poster's age and gender from an AITA post.
+    - Body: only tags preceded by a personal identifier are used
+    - Title: any tag is assumed to refer to the poster
+    Returns a normalized string like "25M", "30F", or "22NB".
+    Falls back to "Unknown" if no matching tag is found.
+    """
+
+    # Searching the body first, because requiring a personal identifier means we're more confident about its accuracy
+    # Backup on the title if we can't find it in the body
+    m = _BODY_DEMO.search(body)
+    if m:
+        return _extract_demo(m)
+    m = _TITLE_DEMO.search(title)
+    if m:
+        return _extract_demo(m)
+    return "Unknown"
 
 def import_db(source_path: str):
     """
@@ -87,6 +148,7 @@ def import_db(source_path: str):
             "nta_count": totals["NTA"],
             "esh_count": totals["ESH"],
             "nah_count": totals["NAH"],
+            "poster_demographic": poster_demographic(row["title"], row["selftext"]),
             "score": row["score"],
             "permalink": row["permalink"],
             "created_utc": str(row["created_utc"]),
@@ -96,13 +158,15 @@ def import_db(source_path: str):
 
     with get_db() as conn:
         conn.executemany(
-            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, esh_count, nah_count, score, permalink, created_utc)
-               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :esh_count, :nah_count, :score, :permalink, :created_utc)""",
+            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, esh_count, nah_count, poster_demographic, score, permalink, created_utc)
+               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :esh_count, :nah_count, :poster_demographic, :score, :permalink, :created_utc)""",
             records,
         )
 
     with_verdict = sum(1 for r in records if r["verdict"])
-    print(f"Imported {len(records)} posts ({with_verdict} with derived verdicts).")
+    with_demo   = sum(1 for r in records if r["poster_demographic"] != "Unknown")
+    print(f"Imported {len(records)} posts "
+          f"({with_verdict} with verdicts, {with_demo} with demographics).")
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ def init_db():
                 nta_count   INTEGER DEFAULT 0,
                 esh_count   INTEGER DEFAULT 0,
                 nah_count   INTEGER DEFAULT 0,
+                poster_demographic  TEXT NOT NULL,
                 score       INTEGER,
                 permalink   TEXT,
                 created_utc TEXT
