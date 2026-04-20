@@ -3,6 +3,7 @@ import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { aitaScenarios } from "../data/aitaScenarios";
 import { Button } from "./ui/button";
+import { VisualizationsSection } from "./VisualizationsSection";
 
 type Post = {
   id: string;
@@ -75,6 +76,7 @@ export function GamePage() {
   const isGameComplete = currentScenarioIndex === aitaScenarios.length - 1 && userVote !== null;
 
   return (
+    <>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-400 via-pink-400 to-red-400 p-4 md:p-8">
       {/* Header with score */}
       <div className="text-center mb-8">
@@ -208,5 +210,9 @@ export function GamePage() {
         </div>
       </div>
     </div>
+
+    {/* Scroll down to view the visualizations section. I don't super like how it just turns into a blank white page - TODO for the future to fix this. */}
+    <VisualizationsSection />
+    </>
   );
 }
