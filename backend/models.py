@@ -14,7 +14,7 @@ class Post(BaseModel):
     esh_count: int = 0
     nah_count: int = 0
     poster_age: Optional[int] = None
-    poster_sex: Optional[str] = None  # "M" | "F" | "NB"
+    poster_sex: Optional[str] = None 
     score: Optional[int]
     permalink: Optional[str]
 
@@ -32,7 +32,6 @@ class PostDetail(Post):
 
 
 class PostSummary(BaseModel):
-    """Lightweight post shape for bulk responses used by D3 visualizations."""
     id: str
     title: str
     verdict: Optional[str]
@@ -47,7 +46,7 @@ class PostSummary(BaseModel):
 class VerdictSubmission(BaseModel):
     post_id: str
     session_id: str
-    verdict: str  # "YTA" | "NTA" | "ESH" | "NAH"
+    verdict: str  # "YTA" | "NTA" 
 
 
 class VerdictCount(BaseModel):

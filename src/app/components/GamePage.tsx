@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { aitaScenarios } from "../data/aitaScenarios";
 import { Button } from "./ui/button";
 import { VisualizationsSection } from "./VisualizationsSection";
 
@@ -14,72 +13,131 @@ type Post = {
   nta_count: number;
   esh_count: number;
   nah_count: number;
+  poster_age: number | null;
+  poster_sex: string | null;
   score: number | null;
   permalink: string | null;
 };
 
-export function GamePage() {
-  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
-  const [userVote, setUserVote] = useState<"YTA" | "NTA" | null>(null);
-  const [score, setScore] = useState({ correct: 0, total: 0 });
-  const [post, setPost] = useState<Post | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+type VerdictSubmission = {
+  post_id: string;
+  session_id: string;
+  verdict: string;
+};
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        const res = await fetch("/api/posts/random");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: Post = await res.json();
-        setPost(data);
-        console.log("Loaded post from backend:", data);
-      } catch (err) {
-        setFetchError(String(err));
-        console.error("Backend fetch failed:", err);
-      }
+type Scenario = {
+  post_data: Post;
+  user_verdict: string;
+  yta_percentage: number;
+  nta_percentage: number;
+};
+
+function computePercentages(post: Post): { yta_percentage: number; nta_percentage: number } {
+  const total = post.yta_count + post.nta_count;
+  console.log("Post Id: " + post.id + " Title: " + post.title)
+  console.log("YTA count: " + post.yta_count)
+  console.log("NTA count: " + post.nta_count)
+
+  if (total === 0) return { yta_percentage: 50, nta_percentage: 50 };
+  return {
+    yta_percentage: Math.round((post.yta_count / total) * 100),
+    nta_percentage: Math.round((post.nta_count / total) * 100),
+  };
+}
+
+export function GamePage() {
+  const [currentPost, setCurrentPost] = useState<Post | null>(null);
+  const [userVote, setUserVote] = useState<"YTA" | "NTA" | null>(null);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const sessionId = useRef(crypto.randomUUID());
+
+  // Function grabs a random post from the databse
+  async function loadPost() {
+    setIsLoading(true);
+    setFetchError(null);
+    try {
+      const res = await fetch("/api/posts/random");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: Post = await res.json();
+      setCurrentPost(data);
+    } catch (err) {
+      setFetchError(String(err));
+      console.error("Backend fetch failed:", err);
+    } finally {
+      setIsLoading(false);
     }
+  }
+  
+  useEffect(() => {
     loadPost();
   }, []);
 
-  const currentScenario = aitaScenarios[currentScenarioIndex];
+  // Handlevote does the following:
+  //  Computes the yta/nta percentages on the current post
+  //  Saves the user vote to score data and uploads it to the backend
+  //  Handles setting the next posts information
+  const handleVote = async (vote: "YTA" | "NTA") => {
+    if (!currentPost) return;
 
-  const handleVote = (vote: "YTA" | "NTA") => {
+    const { yta_percentage, nta_percentage } = computePercentages(currentPost);
+    const majority = yta_percentage > 50 ? "YTA" : "NTA";
+
     setUserVote(vote);
-    
-    // Determine if user's vote matches the majority
-    const majority = currentScenario.ytaPercentage > 50 ? "YTA" : "NTA";
-    if (vote === majority) {
-      setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
-    } else {
-      setScore(prev => ({ ...prev, total: prev.total + 1 }));
+    setScore(prev => ({
+      correct: vote === majority ? prev.correct + 1 : prev.correct,
+      total: prev.total + 1,
+    }));
+    setScenarios(prev => [
+      ...prev,
+      { post_data: currentPost, user_verdict: vote, yta_percentage, nta_percentage },
+    ]);
+
+    try {
+      const submission: VerdictSubmission = {
+        post_id: currentPost.id,
+        session_id: sessionId.current,
+        verdict: vote,
+      };
+      await fetch("/api/verdicts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submission),
+      });
+    } catch (err) {
+      console.error("Failed to submit verdict:", err);
     }
   };
 
-  const handleNext = () => {
-    if (currentScenarioIndex < aitaScenarios.length - 1) {
-      setCurrentScenarioIndex(prev => prev + 1);
-      setUserVote(null);
-    }
+  const handleNext = async () => {
+    setUserVote(null);
+    await loadPost();
   };
 
   const handleRestart = () => {
-    setCurrentScenarioIndex(0);
     setUserVote(null);
+    setScenarios([]);
     setScore({ correct: 0, total: 0 });
+    loadPost();
   };
 
-  const chartData = [
-    { name: "YTA (You're The Asshole)", value: currentScenario.ytaPercentage, color: "#ef4444" },
-    { name: "NTA (Not The Asshole)", value: currentScenario.ntaPercentage, color: "#22c55e" },
-  ];
+  const percentages = currentPost
+    ? computePercentages(currentPost)
+    : { yta_percentage: 50, nta_percentage: 50 };
 
-  const isGameComplete = currentScenarioIndex === aitaScenarios.length - 1 && userVote !== null;
+  const chartData = [
+    { name: "YTA (You're The Asshole)", value: percentages.yta_percentage, color: "#ef4444" },
+    { name: "NTA (Not The Asshole)", value: percentages.nta_percentage, color: "#22c55e" },
+  ];
 
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-gradient-to-br from-orange-400 via-pink-400 to-red-400">
 
     {/* Game Page Section */}
     <section className="h-screen snap-start flex flex-col p-4 md:p-8">
+
       {/* Header with score */}
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-2">
@@ -93,15 +151,22 @@ export function GamePage() {
       {/* Main game area */}
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
-          {!userVote ? (
+          {fetchError ? (
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{fetchError}</p>
+              <Button onClick={loadPost}>Retry</Button>
+            </div>
+          ) : isLoading || !currentPost ? (
+            <div className="text-center text-gray-500">Loading scenario...</div>
+          ) : !userVote ? (
             <>
               {/* Question */}
               <div className="text-center mb-12">
                 <p className="text-2xl md:text-4xl font-semibold text-gray-900 mb-8">
-                  "{currentScenario.question}"
+                  "{currentPost.title}"
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  Scenario {currentScenarioIndex + 1} of {aitaScenarios.length}
+                  Scenario {scenarios.length + 1}
                 </p>
               </div>
 
@@ -109,18 +174,18 @@ export function GamePage() {
               <div className="grid grid-cols-2 gap-6 md:gap-12">
                 <button
                   onClick={() => handleVote("YTA")}
-                  className="flex flex-col items-center justify-center p-8 bg-green-100 hover:bg-green-200 rounded-2xl transition-all transform hover:scale-105 border-4 border-green-400 hover:border-green-600"
+                  className="flex flex-col items-center justify-center p-8 bg-red-100 hover:bg-red-200 rounded-2xl transition-all transform hover:scale-105 border-4 border-red-400 hover:border-red-600"
                 >
-                  <ThumbsUp className="w-20 h-20 md:w-28 md:h-28 text-green-600 mb-4" strokeWidth={2.5} />
+                  <ThumbsUp className="w-20 h-20 md:w-28 md:h-28 text-red-600 mb-4" strokeWidth={2.5} />
                   <span className="text-xl md:text-3xl font-bold text-gray-900">Yes</span>
                   <span className="text-sm md:text-base text-gray-700 mt-1">YTA</span>
                 </button>
 
                 <button
                   onClick={() => handleVote("NTA")}
-                  className="flex flex-col items-center justify-center p-8 bg-red-100 hover:bg-red-200 rounded-2xl transition-all transform hover:scale-105 border-4 border-red-400 hover:border-red-600"
+                  className="flex flex-col items-center justify-center p-8 bg-green-100 hover:bg-green-200 rounded-2xl transition-all transform hover:scale-105 border-4 border-green-400 hover:border-green-600"
                 >
-                  <ThumbsDown className="w-20 h-20 md:w-28 md:h-28 text-red-600 mb-4" strokeWidth={2.5} />
+                  <ThumbsDown className="w-20 h-20 md:w-28 md:h-28 text-green-600 mb-4" strokeWidth={2.5} />
                   <span className="text-xl md:text-3xl font-bold text-gray-900">No</span>
                   <span className="text-sm md:text-base text-gray-700 mt-1">NTA</span>
                 </button>
@@ -147,7 +212,7 @@ export function GamePage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, value }) => `${value}%`}
+                      label={({ value }) => `${value}%`}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
@@ -163,49 +228,38 @@ export function GamePage() {
 
               {/* Result message */}
               <div className="text-center mb-8">
-                {((userVote === "YTA" && currentScenario.ytaPercentage > 50) ||
-                  (userVote === "NTA" && currentScenario.ntaPercentage > 50)) && (
+                {((userVote === "YTA" && percentages.yta_percentage > 50) ||
+                  (userVote === "NTA" && percentages.nta_percentage > 50)) && (
                   <p className="text-xl text-green-600 font-bold">
                     ✓ You agree with the majority!
                   </p>
                 )}
-                {((userVote === "YTA" && currentScenario.ytaPercentage <= 50) ||
-                  (userVote === "NTA" && currentScenario.ntaPercentage <= 50)) && (
+                {((userVote === "YTA" && percentages.yta_percentage <= 50) ||
+                  (userVote === "NTA" && percentages.nta_percentage <= 50)) && (
                   <p className="text-xl text-orange-600 font-bold">
-                    You're in the minority on this one!
+                    X You're in the minority on this one!
                   </p>
                 )}
               </div>
 
               {/* Navigation buttons */}
               <div className="flex gap-4 justify-center">
-                {!isGameComplete ? (
-                  <Button
-                    onClick={handleNext}
-                    size="lg"
-                    className="bg-gray-900 hover:bg-gray-800 text-white px-8"
-                  >
-                    Next Scenario
-                  </Button>
-                ) : (
-                  <div className="text-center space-y-4">
-                    <p className="text-2xl font-bold text-gray-900">
-                      Game Complete! 🎉
-                    </p>
-                    <p className="text-xl text-gray-700">
-                      Final Score: {score.correct}/{score.total} (
-                      {Math.round((score.correct / score.total) * 100)}%)
-                    </p>
-                    <Button
-                      onClick={handleRestart}
-                      size="lg"
-                      className="bg-gray-900 hover:bg-gray-800 text-white px-8"
-                    >
-                      <RotateCcw className="w-5 h-5 mr-2" />
-                      Play Again
-                    </Button>
-                  </div>
-                )}
+                <Button
+                  onClick={handleNext}
+                  size="lg"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-8"
+                >
+                  Next Scenario
+                </Button>
+                <Button
+                  onClick={handleRestart}
+                  size="lg"
+                  variant="outline"
+                  className="px-8"
+                >
+                  <RotateCcw className="w-5 h-5 mr-2" />
+                  Restart
+                </Button>
               </div>
             </>
           )}
