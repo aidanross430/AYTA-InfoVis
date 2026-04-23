@@ -32,7 +32,8 @@ def init_db():
                 nta_count   INTEGER DEFAULT 0,
                 esh_count   INTEGER DEFAULT 0,
                 nah_count   INTEGER DEFAULT 0,
-                poster_demographic  TEXT NOT NULL,
+                poster_age  INTEGER,
+                poster_sex  TEXT,
                 score       INTEGER,
                 permalink   TEXT,
                 created_utc TEXT
@@ -41,7 +42,6 @@ def init_db():
             CREATE TABLE IF NOT EXISTS user_verdicts (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id     TEXT NOT NULL REFERENCES posts(id),
-                session_id  TEXT NOT NULL,
                 verdict     TEXT NOT NULL,
                 created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
             );

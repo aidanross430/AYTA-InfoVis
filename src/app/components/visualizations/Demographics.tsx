@@ -8,27 +8,29 @@ type VerdictCounts = {
   nah: number;
 };
 
-type PostDetail = {
+type PostSummary = {
   id: string;
   title: string;
-  body: string;
   verdict: string | null;
-  score: number | null;
-  permalink: string | null;
   reddit_verdicts: VerdictCounts;
   user_verdicts: VerdictCounts;
+  poster_age: number | null;
+  poster_sex: string | null;
+  score: number | null;
+  permalink: string | null;
 };
+
 
 // The frame of the svg element we make here
 const WIDTH = 1200;
 const HEIGHT = 800;
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 50 };
 
-export function UserVsReddit() {
+export function DemographicGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // UseStates
-  const [data, setData] = useState<PostDetail | null>(null);
+  const [data, setData] = useState<PostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,9 +38,9 @@ export function UserVsReddit() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/posts/xt1ksm");
+        const res = await fetch("/api/posts/all");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json: PostDetail = await res.json();
+        const json: PostSummary[] = await res.json();
         setData(json);
       } catch (err) {
         setError(String(err));
@@ -49,7 +51,6 @@ export function UserVsReddit() {
     load();
   }, []);
 
-  
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -67,6 +68,7 @@ export function UserVsReddit() {
     // Start coding Visualization here!
 
   }, []); // Data dependencies need to go here
+
 
   console.log(data)
 
