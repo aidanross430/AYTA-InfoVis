@@ -43,15 +43,12 @@ _BODY_DEMO = re.compile(
 )
 
 
-def _extract_demo(m: re.Match) -> str:
-    """Pull age+gender out of a _TAG match (works for both title and body patterns)."""
-    # Body pattern has a non-capturing lead group, so tag groups are offset by 0
-    # in the title pattern and share the same relative positions in both.
+def _extract_demo(m: re.Match) -> tuple[int, str]:
+    """Pull (age, sex) out of a _TAG match (works for both title and body patterns)."""
     groups = m.groups()
-    # Find the last 4 groups which belong to the _TAG portion
     age_a, gen_a, gen_b, age_b = groups[-4], groups[-3], groups[-2], groups[-1]
     age, gender = (age_a, gen_a) if age_a is not None else (age_b, gen_b)
-    return f"{age}{_normalize_gender(gender)}"
+    return int(age), _normalize_gender(gender)
 
 
 def _normalize_gender(raw: str) -> str:
@@ -79,24 +76,21 @@ def tally_verdicts(comments: list[tuple[str, int]]) -> dict[str, int]:
                 totals[keyword] += max(score or 0, 0)
     return totals
 
-def poster_demographic(title: str, body: str) -> str:
+def poster_demographic(title: str, body: str) -> tuple[int | None, str | None]:
     """
-    Parse the poster's age and gender from an AITA post.
+    Parse the poster's age and sex from an AITA post.
     - Body: only tags preceded by a personal identifier are used
     - Title: any tag is assumed to refer to the poster
-    Returns a normalized string like "25M", "30F", or "22NB".
-    Falls back to "Unknown" if no matching tag is found.
+    Returns (age, sex) e.g. (25, "M"), (30, "F"), (22, "NB").
+    Falls back to (None, None) if no matching tag is found.
     """
-
-    # Searching the body first, because requiring a personal identifier means we're more confident about its accuracy
-    # Backup on the title if we can't find it in the body
     m = _BODY_DEMO.search(body)
     if m:
         return _extract_demo(m)
     m = _TITLE_DEMO.search(title)
     if m:
         return _extract_demo(m)
-    return "Unknown"
+    return None, None
 
 def import_db(source_path: str):
     """
@@ -138,6 +132,7 @@ def import_db(source_path: str):
         totals = tally_verdicts(post_comments)
         best = max(totals, key=lambda k: totals[k])
         verdict = best if totals[best] > 0 else None
+        age, sex = poster_demographic(row["title"], row["selftext"])
 
         records.append({
             "id": row["submission_id"],
@@ -148,7 +143,8 @@ def import_db(source_path: str):
             "nta_count": totals["NTA"],
             "esh_count": totals["ESH"],
             "nah_count": totals["NAH"],
-            "poster_demographic": poster_demographic(row["title"], row["selftext"]),
+            "poster_age": age,
+            "poster_sex": sex,
             "score": row["score"],
             "permalink": row["permalink"],
             "created_utc": str(row["created_utc"]),
@@ -158,13 +154,13 @@ def import_db(source_path: str):
 
     with get_db() as conn:
         conn.executemany(
-            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, esh_count, nah_count, poster_demographic, score, permalink, created_utc)
-               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :esh_count, :nah_count, :poster_demographic, :score, :permalink, :created_utc)""",
+            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, esh_count, nah_count, poster_age, poster_sex, score, permalink, created_utc)
+               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :esh_count, :nah_count, :poster_age, :poster_sex, :score, :permalink, :created_utc)""",
             records,
         )
 
     with_verdict = sum(1 for r in records if r["verdict"])
-    with_demo   = sum(1 for r in records if r["poster_demographic"] != "Unknown")
+    with_demo   = sum(1 for r in records if r["poster_age"] is not None)
     print(f"Imported {len(records)} posts "
           f"({with_verdict} with verdicts, {with_demo} with demographics).")
 

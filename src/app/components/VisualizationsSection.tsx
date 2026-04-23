@@ -1,28 +1,48 @@
-import { VerdictDistribution } from "./visualizations/VerdictDistribution";
-import { UserVsReddit } from "./visualizations/UserVsReddit";
-import { VerdictOverTime } from "./visualizations/VerdictOverTime";
 import { VisualizationTemplate } from "./visualizations/VisualizationTemplate";
+import { UserVsReddit } from "./visualizations/UserVsReddit";
+import { DemographicGraph } from "./visualizations/Demographics";
 
 export function VisualizationsSection() {
   return (
-    <section className="bg-gradient-to-br from-pink-400 via-red-400 to-orange-400 px-4 py-16 md:px-12">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 text-center mb-2">
-          By the Numbers
-        </h1>
-        <p className="text-center text-gray-500 mb-16">
-          Insights from the r/AmITheAsshole community.
-        </p>
-
-        <div className="space-y-20">
-
-          {/* Heres what should be copied when creating new visualizations. Duplicate the Visualization template file to make your own. */}
-          <div className="bg-white shadow-2xl rounded-3xl shadow p-8">
+    // Each section snaps into GamePage's outer scroll container
+    <>
+      {/* This block defines each visualizations segment */}
+      <section className="h-screen snap-start flex flex-col px-4 py-40 md:px-10">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
+          <div>
+            {/* Visualization's Title and Description */}
+            <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">By the Numbers</h1>
+            <p className="text-center text-gray-500">Insights from the r/AmITheAsshole community.</p>
+          </div>
+          <div className="bg-white shadow-2xl rounded-3xl p-8 flex-1 flex flex-col">
             <VisualizationTemplate />
           </div>
-
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section className="h-screen snap-start flex flex-col px-4 py-40 md:px-10">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">User Responses vs Reddit Responses</h1>
+            <p className="text-center text-gray-500">Insights from the r/AmITheAsshole community.</p>
+          </div>
+          <div className="bg-white shadow-2xl rounded-3xl p-8 flex-1 flex flex-col">
+            <UserVsReddit />
+          </div>
+        </div>
+      </section>
+
+      <section className="h-screen snap-start flex flex-col px-4 py-40 md:px-10">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">Demographic Graph</h1>
+            <p className="text-center text-gray-500">Put Description Here</p>
+          </div>
+          <div className="bg-white shadow-2xl rounded-3xl p-8 flex-1 flex flex-col">
+            <DemographicGraph />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

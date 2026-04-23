@@ -76,8 +76,10 @@ export function GamePage() {
   const isGameComplete = currentScenarioIndex === aitaScenarios.length - 1 && userVote !== null;
 
   return (
-    <>
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-400 via-pink-400 to-red-400 p-4 md:p-8">
+    <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-gradient-to-br from-orange-400 via-pink-400 to-red-400">
+
+    {/* Game Page Section */}
+    <section className="h-screen snap-start flex flex-col p-4 md:p-8">
       {/* Header with score */}
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-2">
@@ -209,10 +211,11 @@ export function GamePage() {
           )}
         </div>
       </div>
-    </div>
+    </section>
 
-    {/* Scroll down to view the visualizations section. I don't super like how it just turns into a blank white page - TODO for the future to fix this. */}
+    {/* Visualization sections snap into place after the game */}
     <VisualizationsSection />
-    </>
+
+    </div>
   );
 }

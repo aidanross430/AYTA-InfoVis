@@ -13,6 +13,33 @@ class Post(BaseModel):
     nta_count: int = 0
     esh_count: int = 0
     nah_count: int = 0
+    poster_age: Optional[int] = None
+    poster_sex: Optional[str] = None  # "M" | "F" | "NB"
+    score: Optional[int]
+    permalink: Optional[str]
+
+
+class VerdictCounts(BaseModel):
+    yta: int = 0
+    nta: int = 0
+    esh: int = 0
+    nah: int = 0
+
+
+class PostDetail(Post):
+    reddit_verdicts: VerdictCounts
+    user_verdicts: VerdictCounts
+
+
+class PostSummary(BaseModel):
+    """Lightweight post shape for bulk responses used by D3 visualizations."""
+    id: str
+    title: str
+    verdict: Optional[str]
+    reddit_verdicts: VerdictCounts
+    user_verdicts: VerdictCounts
+    poster_age: Optional[int] = None
+    poster_sex: Optional[str] = None
     score: Optional[int]
     permalink: Optional[str]
 
