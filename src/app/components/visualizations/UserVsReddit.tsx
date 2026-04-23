@@ -6,7 +6,7 @@ const WIDTH = 1200;
 const HEIGHT = 800;
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 50 };
 
-export function VisualizationTemplate() {
+export function UserVsReddit() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
