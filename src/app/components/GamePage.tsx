@@ -3,6 +3,10 @@ import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { VisualizationsSection } from "./VisualizationsSection";
 import { VerdictPieChart } from "./visualizations/VerdictPieChart";
+import { GameSummary } from "./visualizations/GameSummary";
+
+// How many posts do we show the user?
+const POST_LIMIT = 5;
 
 type Post = {
   id: string;
@@ -52,6 +56,7 @@ export function GamePage() {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
   const sessionId = useRef(crypto.randomUUID());
 
   // Function grabs a random post from the databse
@@ -112,6 +117,10 @@ export function GamePage() {
   };
 
   const handleNext = async () => {
+    if (scenarios.length >= POST_LIMIT) {
+      setIsGameOver(true);
+      return;
+    }
     setUserVote(null);
     await loadPost();
   };
@@ -120,6 +129,7 @@ export function GamePage() {
     setUserVote(null);
     setScenarios([]);
     setScore({ correct: 0, total: 0 });
+    setIsGameOver(false);
     loadPost();
   };
 
@@ -146,7 +156,9 @@ export function GamePage() {
       {/* Main game area */}
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
-          {fetchError ? (
+          {isGameOver ? (
+            <GameSummary scenarios={scenarios} score={score} onRestart={handleRestart} />
+          ) : fetchError ? (
             <div className="text-center">
               <p className="text-red-600 mb-4">{fetchError}</p>
               <Button onClick={loadPost}>Retry</Button>
@@ -230,7 +242,7 @@ export function GamePage() {
                   size="lg"
                   className="bg-gray-900 hover:bg-gray-800 text-white px-8"
                 >
-                  Next Scenario
+                  {scenarios.length >= POST_LIMIT ? "See Results" : "Next Scenario"}
                 </Button>
                 <Button
                   onClick={handleRestart}

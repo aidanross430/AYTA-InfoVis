@@ -32,7 +32,7 @@ type VerdictPieChartProps = {
 
 // The frame of the svg element we make here
 const WIDTH = 600;
-const HEIGHT = 400;
+const HEIGHT = 300;
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 50 };
 
 export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: VerdictPieChartProps) {
@@ -61,7 +61,7 @@ export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: Verd
     // Start coding Visualization here!
     
   
-  }, []); // Data dependencies need to go here
+  }, [ytaPercentage, ntaPercentage]); // Data dependencies need to go here
 
   return (
     // 'recharts' pichart code from mockup
