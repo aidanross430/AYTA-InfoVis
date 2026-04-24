@@ -42,6 +42,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS user_verdicts (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id     TEXT NOT NULL REFERENCES posts(id),
+                session_id  INTEGER NOT NULL,
                 verdict     TEXT NOT NULL,
                 created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
             );

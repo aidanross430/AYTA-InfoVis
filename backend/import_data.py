@@ -16,8 +16,8 @@ import sys
 import sqlite3
 from database import init_db, get_db
 
-VERDICT_KEYWORDS = ["YTA", "NTA", "ESH", "NAH"]
-KEYWORD_PATTERN = re.compile(r"\b(YTA|NTA|ESH|NAH)\b", re.IGNORECASE)
+VERDICT_KEYWORDS = ["YTA", "NTA"]
+KEYWORD_PATTERN = re.compile(r"\b(YTA|NTA)\b", re.IGNORECASE)
 
 # Demographic tag — age+gender or gender+age inside brackets or parenthesis
 # Groups: (age_first, gender_first, gender_second, age_second)
@@ -141,8 +141,6 @@ def import_db(source_path: str):
             "verdict": verdict,
             "yta_count": totals["YTA"],
             "nta_count": totals["NTA"],
-            "esh_count": totals["ESH"],
-            "nah_count": totals["NAH"],
             "poster_age": age,
             "poster_sex": sex,
             "score": row["score"],
@@ -154,8 +152,8 @@ def import_db(source_path: str):
 
     with get_db() as conn:
         conn.executemany(
-            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, esh_count, nah_count, poster_age, poster_sex, score, permalink, created_utc)
-               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :esh_count, :nah_count, :poster_age, :poster_sex, :score, :permalink, :created_utc)""",
+            """INSERT OR REPLACE INTO posts (id, title, body, verdict, yta_count, nta_count, poster_age, poster_sex, score, permalink, created_utc)
+               VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :poster_age, :poster_sex, :score, :permalink, :created_utc)""",
             records,
         )
 

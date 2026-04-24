@@ -20,8 +20,8 @@ type PostDetail = {
 };
 
 // The frame of the svg element we make here
-const WIDTH = 1200;
-const HEIGHT = 800;
+const WIDTH = 600;
+const HEIGHT = 400;
 const MARGIN = { top: 20, right: 20, bottom: 40, left: 50 };
 
 export function UserVsReddit() {
