@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { Button } from "./ui/button";
 import { VisualizationsSection } from "./VisualizationsSection";
+import { VerdictPieChart } from "./visualizations/VerdictPieChart";
 
 type Post = {
   id: string;
@@ -127,11 +127,6 @@ export function GamePage() {
     ? computePercentages(currentPost)
     : { yta_percentage: 50, nta_percentage: 50 };
 
-  const chartData = [
-    { name: "YTA (You're The Asshole)", value: percentages.yta_percentage, color: "#ef4444" },
-    { name: "NTA (Not The Asshole)", value: percentages.nta_percentage, color: "#22c55e" },
-  ];
-
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-gradient-to-br from-orange-400 via-pink-400 to-red-400">
 
@@ -205,25 +200,11 @@ export function GamePage() {
 
               {/* Pie Chart */}
               <div className="mb-8">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ value }) => `${value}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <VerdictPieChart
+                  ytaPercentage={percentages.yta_percentage}
+                  ntaPercentage={percentages.nta_percentage}
+                  scenario={scenarios[scenarios.length - 1]}
+                />
               </div>
 
               {/* Result message */}
