@@ -8,7 +8,7 @@ export function VisualizationsSection() {
     <>
       {/* This block defines each visualizations segment */}
       <section className="h-screen snap-start flex flex-col px-4 py-6 md:py-10 md:px-10">
-        <div className="max-w-5xl mx-auto w-full flex flex-col flex-1 gap-4">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
           <div>
             {/* Visualization's Title and Description */}
             <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">By the Numbers</h1>
@@ -21,7 +21,7 @@ export function VisualizationsSection() {
       </section>
 
       <section className="h-screen snap-start flex flex-col px-4 py-6 md:py-10 md:px-10">
-        <div className="max-w-5xl mx-auto w-full flex flex-col flex-1 gap-4">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">User Responses vs Reddit Responses</h1>
             <p className="text-center text-gray-500">Insights from the r/AmITheAsshole community.</p>
@@ -33,7 +33,7 @@ export function VisualizationsSection() {
       </section>
 
       <section className="h-screen snap-start flex flex-col px-4 py-6 md:py-10 md:px-10">
-        <div className="max-w-5xl mx-auto w-full flex flex-col flex-1 gap-4">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">Demographic Graph</h1>
             <p className="text-center text-gray-500">Put Description Here</p>

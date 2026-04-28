@@ -155,7 +155,7 @@ export function GamePage() {
 
       {/* Main game area */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
+        <div className="w-full max-w-6xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
           {isGameOver ? (
             <GameSummary scenarios={scenarios} score={score} onRestart={handleRestart} />
           ) : fetchError ? (
