@@ -40,17 +40,13 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
   const did_user_agree = scenario.user_verdict === scenario_majority;
 
 
-
-
-
-
   useEffect(() => {
 
     // Graph Dimensions
     if (!svgRef.current) return;
     const width = svgRef.current.getBoundingClientRect().width;
     const height = svgRef.current.getBoundingClientRect().height;
-    const margin = { top: 20, right: 20, bottom: 40, left: 20 };
+    const margin = { top: 5, right: 20, bottom: 5, left: 20 };
 
     // Tooltip div
     const tooltip = d3.select("body").append("div")
@@ -67,7 +63,7 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
 
     // Bar's dimensions
     const barWidth = width - margin.left - margin.right;
-    const barHeight = height*0.80 - margin.top - margin.bottom;
+    const barHeight = height*0.75 - margin.top - margin.bottom;
     const ytaWidth = (scenario.yta_percentage / 100) * barWidth;
     const ntaWidth = (scenario.nta_percentage / 100) * barWidth;
 
@@ -184,8 +180,9 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
           {scenario.user_verdict}
         </span>
       </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reddit Voted:</p>
       {/* Graph */}
-      <svg ref={svgRef} width="100%" height="160" className="w-full" />
+      <svg ref={svgRef} width="100%" height="100" className="w-full" />
       {/* User agreed? */}
       <span className={`text-xs font-semibold ${did_user_agree ? "text-green-600" : "text-orange-500"}`}>
         {did_user_agree ? "✓ Agreed with majority" : "✗ In the minority"}
