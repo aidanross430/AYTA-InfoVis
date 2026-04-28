@@ -21,7 +21,7 @@ type PostSummary = {
 };
 
 // The frame of the svg element we make here
-const MARGIN = { top: 20, right: 100, bottom: 50, left: 100 };
+const MARGIN = { top: 10, right: 100, bottom: 50, left: 100 };
 
 export function UserVsReddit() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -30,6 +30,8 @@ export function UserVsReddit() {
   const [data, setData] = useState<PostSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [verdictShift, setVerdictShift] = useState<number | null>(null);
+
 
   // Tooltip div
   const tooltip = d3.select("body").append("div")
@@ -104,6 +106,10 @@ export function UserVsReddit() {
     const user_yta_percent = (totalUser.yta / (totalUser.nta+totalUser.yta))*100
     const user_nta_percent = (totalUser.nta / (totalUser.nta+totalUser.yta))*100
 
+    const shift = user_yta_percent - reddit_yta_percent;
+    setVerdictShift(shift);
+
+    // bar groups for clipping paths
     const redditBarGroup = g.append("g").attr("clip-path", `url(#bar-clip-r)`)
     const userBarGroup = g.append("g").attr("clip-path", `url(#bar-clip-u)`)
 
@@ -136,7 +142,6 @@ export function UserVsReddit() {
       .attr("x", 0).attr("y", y("Users")! + offset)
       .attr("width", barWidth).attr("height", thickness)
       .attr("rx", 20);
-
 
     // Reddit bar
     redditBarGroup.append("rect")
@@ -265,14 +270,72 @@ export function UserVsReddit() {
       .selectAll("text")
         .style("font-size", "16px")
 
-  }, [data]); // Data dependencies need to go here
+    // Making the comparison between Reddit and Users
+    // Arrow head
+    svg.append("defs").append("marker")
+      .attr("id", "arrow")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 8).attr("refY", 0)
+      .attr("markerWidth", 6).attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", "#6b7280");
+
+    // Locations of important landmarks
+    const x1 = x(reddit_yta_percent);
+    const y1 = y("Reddit")! + offset + thickness / 2;
+    const x2 = x(user_yta_percent);
+    const y2 = y("Users")! + offset + thickness / 2;
+    const yAvg = (y1 + y2)/2
+
+    // Line pointing for the shift
+    g.append("line")
+      .attr("x1", x1).attr("y1", yAvg)
+      .attr("x2", x2).attr("y2", yAvg)
+      .attr("stroke", "#6b7280")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-dasharray", "4 3")
+      .attr("marker-end", "url(#arrow)");
+
+    // markers for the yta/nta junctions
+    g.append("line")
+      .attr("x1", x1).attr("y1", y1+thickness/2)
+      .attr("x2", x1).attr("y2", y2-thickness/1.2)
+      .attr("stroke", "#6b7280")
+      .attr("stroke-width", 1.5);
+    g.append("line")
+      .attr("x1", x2).attr("y1", y1+thickness/1.2)
+      .attr("x2", x2).attr("y2", y2-thickness/2)
+      .attr("stroke", "#6b7280")
+      .attr("stroke-width", 1.5);
+    g.append("text")
+      .attr("x", (x1+x2)/2).attr("y", yAvg-20)
+      .attr("dy", "0.35em").attr("text-anchor", "middle")
+      .text(`${verdictShift?.toFixed(2)}%`)
+
+  }, [data, verdictShift]); // Data dependencies need to go here
 
   console.log(data)
 
   return (
-    <svg
-    ref={svgRef}
-    className="w-full h-full"
-    />
+  <div className="flex flex-col gap-2 h-full">
+    <h1 className="text-center">
+      {verdictShift !== null && (
+        <>
+          Our users voted YTA{" "}
+          <span style={{ color: verdictShift > 0 ? "#991b1b" : "#166534" }}>
+            {Math.abs(verdictShift).toFixed(1)}%{" "}
+            {verdictShift > 0 ? "more" : "less"}
+          </span>{" "}
+          than Reddit Users
+        </>
+      )}
+    </h1>
+    <svg ref={svgRef} className="w-full" style={{ height: "75%" }} />
+    <div className="flex flex-col gap-2 px-2">
+      {/* Static info breakdown goes here */}
+    </div>
+  </div>
   );
 }
