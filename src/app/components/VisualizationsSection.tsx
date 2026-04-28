@@ -12,7 +12,7 @@ export function VisualizationsSection() {
           <div>
             {/* Visualization's Title and Description */}
             <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">By the Numbers</h1>
-            <p className="text-center text-gray-500">Insights from the r/AmITheAsshole community.</p>
+            <p className="text-center text-gray-900">Insights from the r/AmITheAsshole community.</p>
           </div>
           <div className="bg-white shadow-2xl rounded-3xl p-8 flex-1 flex flex-col">
             <VisualizationTemplate />
@@ -23,8 +23,8 @@ export function VisualizationsSection() {
       <section className="h-screen snap-start flex flex-col px-4 py-6 md:py-10 md:px-10">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">User Responses vs Reddit Responses</h1>
-            <p className="text-center text-gray-500">Insights from the r/AmITheAsshole community.</p>
+            <h1 className="text-4xl font-bold text-gray-900 text-center mb-1">Are our Users More or Less Forgiving than Reddit?</h1>
+            <p className="text-center text-gray-900">Userbase Forgiveness by Total Number of Verdicts</p>
           </div>
           <div className="bg-white shadow-2xl rounded-3xl p-8 flex-1 flex flex-col">
             <UserVsReddit />
