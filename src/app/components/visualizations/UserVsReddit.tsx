@@ -36,6 +36,20 @@ export function UserVsReddit() {
   const [searchResults, setSearchResults] = useState<PostSummary[] | null>(null);
   const [numResults, setNumResults] = useState<number>();
 
+  const handleClear = async () => {
+    setQuery("");
+    setSearchResults(null);
+    setNumResults(undefined);
+    try {
+      const res = await fetch("/api/posts/all");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json: PostSummary[] = await res.json();
+      setData(json);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -472,26 +486,34 @@ export function UserVsReddit() {
         </button>
       </form>
       {searchResults && searchResults.length > 0 && (
-        <div className="flex flex-col gap-2 mt-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">We found {numResults} similar posts! Here are the five best matches:</p>
-          {searchResults.map((post, i) => {
-            const ytaPct = Math.round((post.reddit_verdicts.yta / (post.reddit_verdicts.yta + post.reddit_verdicts.nta)) * 100);
-            const majority = ytaPct > 50 ? "YTA" : "NTA";
-            return (
-              <div key={post.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <span className="text-xs text-gray-400 w-4 shrink-0">{i + 1}</span>
-                <p className="flex-1 text-sm text-gray-800 truncate">{post.title}</p>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                  majority === "YTA" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                }`}>{majority === "YTA" ? ytaPct : 100-ytaPct} {majority}%</span>
-                {post.permalink && (
-                  <a href={`https://reddit.com${post.permalink}`} target="_blank" rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-gray-600 text-xs shrink-0">↗</a>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <>
+          <div className="flex flex-col gap-2 mt-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">We found {numResults} similar posts! Here are the five best matches:</p>
+            {searchResults.map((post, i) => {
+              const ytaPct = Math.round((post.reddit_verdicts.yta / (post.reddit_verdicts.yta + post.reddit_verdicts.nta)) * 100);
+              const majority = ytaPct > 50 ? "YTA" : "NTA";
+              return (
+                <div key={post.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                  <span className="text-xs text-gray-400 w-4 shrink-0">{i + 1}</span>
+                  <p className="flex-1 text-sm text-gray-800 truncate">{post.title}</p>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                    majority === "YTA" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                  }`}>{majority === "YTA" ? ytaPct : 100-ytaPct} {majority}%</span>
+                  {post.permalink && (
+                    <a href={`https://reddit.com${post.permalink}`} target="_blank" rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-gray-600 text-xs shrink-0">↗</a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="self-end px-5 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700">
+            Clear selection?
+          </button>
+        </>
       )}
     </div>
   </div>
