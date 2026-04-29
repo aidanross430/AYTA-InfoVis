@@ -156,6 +156,11 @@ def import_db(source_path: str):
                VALUES (:id, :title, :body, :verdict, :yta_count, :nta_count, :poster_age, :poster_sex, :score, :permalink, :created_utc)""",
             records,
         )
+        conn.executemany(
+            "INSERT OR REPLACE INTO posts_fts(id, title, body) VALUES (:id, :title, :body)",
+            records,
+        )
+
 
     with_verdict = sum(1 for r in records if r["verdict"])
     with_demo   = sum(1 for r in records if r["poster_age"] is not None)

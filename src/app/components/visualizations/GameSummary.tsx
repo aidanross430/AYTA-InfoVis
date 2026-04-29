@@ -101,6 +101,7 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
             </div>
           </div>
         `);
+        d3.select(event.currentTarget).transition().duration(150).attr("fill", "#f87171");
       })
       .on("mousemove", (event) => {
         const node = tooltip.node() as HTMLElement;
@@ -109,6 +110,7 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
           .style("top", `${event.pageY - node.offsetHeight - 10}px`); // center the tooltip above the mouse
       })
       .on("mouseout", (event) => {
+        d3.select(event.currentTarget).transition().duration(150).attr("fill", "#fca5a5");
         tooltip.style("opacity", 0);
       });
 
@@ -127,6 +129,7 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
             </div>
           </div>
         `);
+        d3.select(event.currentTarget).transition().duration(150).attr("fill", "#5daa79");
       })
       .on("mousemove", (event) => {
         const node = tooltip.node() as HTMLElement;
@@ -135,16 +138,9 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
           .style("top", `${event.pageY - node.offsetHeight - 10}px`); // center the tooltip above the mouse
       })
       .on("mouseout", (event) => {
+        d3.select(event.currentTarget).transition().duration(150).attr("fill", "#86efac");
         tooltip.style("opacity", 0);
       });
-
-    // Full bar border
-    g.append("rect")
-      .attr("width", barWidth).attr("height", barHeight)
-      .attr("rx", 20)
-      .attr("fill", "none")
-      .attr("stroke", "#d1d5db")
-      .attr("stroke-width", 1.5);
 
     // Labels only show with sufficient percent
     if (scenario.yta_percentage > 0.1)

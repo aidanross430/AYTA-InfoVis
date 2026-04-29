@@ -4,6 +4,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, get_db
 from models import Post, PostDetail, PostSummary, VerdictCounts, VerdictSubmission, StatsResponse, VerdictCount
+from typing import Optional
+import re
+
 
 app = FastAPI(title="AYTA API")
 
@@ -14,28 +17,58 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+STOP_WORDS = {"i", "me", "my", "am", "is", "the", "a", "an", "and", "or", "to", "in", "it", "of", "was", "for", "aita", "wibta"}
+
+# Helper for not including the stop words in the FTS search
+def extract_keywords(text: str) -> str:
+    words = re.findall(r"[a-zA-Z]+", text.lower())
+    keywords = [w for w in words if w not in STOP_WORDS and len(w) > 2]
+    return " ".join(keywords)
 
 @app.on_event("startup")
 def startup():
     init_db()
 
 @app.get("/api/posts/all", response_model=list[PostSummary])
-def get_all_posts():
+def get_all_posts(q: Optional[str] = None):
     """
     Returns id, title, verdict, reddit and user verdict counts, poster age/sex,
     score, and permalink for every post. Intended for D3 visualizations.
     """
     with get_db() as conn:
-        rows = conn.execute(
-            """SELECT id, title, verdict, yta_count, nta_count, esh_count, nah_count,
-                      poster_age, poster_sex, score, permalink
-               FROM posts"""
-        ).fetchall()
+        # If user has provided a query 
+        if (q):
+            match_query = extract_keywords(q)
+            rows = conn.execute(
+                """SELECT p.id, p.title, p.verdict, p.yta_count, p.nta_count,
+                        p.esh_count, p.nah_count, p.poster_age, p.poster_sex,
+                        p.score, p.permalink
+                FROM posts p
+                JOIN posts_fts f ON p.id = f.id
+                WHERE posts_fts MATCH ?
+                ORDER BY rank""",
+                (match_query,)
+            ).fetchall()
 
-        # Aggregate user verdicts for all posts in one query instead of N+1
-        user_rows = conn.execute(
-            "SELECT post_id, verdict, COUNT(*) as count FROM user_verdicts GROUP BY post_id, verdict"
-        ).fetchall()
+            user_rows = conn.execute(
+                """SELECT uv.post_id, uv.verdict, COUNT(*) as count
+                FROM user_verdicts uv
+                JOIN posts_fts f ON uv.post_id = f.id
+                WHERE posts_fts MATCH ?
+                GROUP BY uv.post_id, uv.verdict""",
+                (match_query,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """SELECT id, title, verdict, yta_count, nta_count, esh_count, nah_count,
+                        poster_age, poster_sex, score, permalink
+                FROM posts"""
+            ).fetchall()
+
+            # Aggregate user verdicts for all posts in one query instead of N+1
+            user_rows = conn.execute(
+                "SELECT post_id, verdict, COUNT(*) as count FROM user_verdicts GROUP BY post_id, verdict"
+            ).fetchall()
 
     # Build lookup: {post_id: {verdict: count}}
     user_counts: dict[str, dict[str, int]] = {}

@@ -31,6 +31,31 @@ export function UserVsReddit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [verdictShift, setVerdictShift] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<PostSummary[] | null>(null);
+  const [numResults, setNumResults] = useState<number>();
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setIsSearching(true);
+    // only return 
+      try {
+        const params = new URLSearchParams({ q: query });
+        const res = await fetch(`/api/posts/all?${params}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json: PostSummary[] = await res.json();
+        setData(json);
+        setSearchResults(json.slice(0, 5));
+        setNumResults(json.length);
+      } catch (err) {
+        setError(String(err));
+      } finally {
+        setLoading(false);
+      }
+    setIsSearching(false);
+  };
 
 
   // Tooltip div
@@ -101,6 +126,7 @@ export function UserVsReddit() {
       nah: acc.nah + post.user_verdicts.nah,
     }), empty());
 
+    // Data calculations
     const reddit_yta_percent = (totalReddit.yta / (totalReddit.nta+totalReddit.yta))*100
     const reddit_nta_percent = (totalReddit.nta / (totalReddit.nta+totalReddit.yta))*100
     const user_yta_percent = (totalUser.yta / (totalUser.nta+totalUser.yta))*100
@@ -108,6 +134,9 @@ export function UserVsReddit() {
 
     const shift = user_yta_percent - reddit_yta_percent;
     setVerdictShift(shift);
+
+    const redditTotal = totalReddit.yta + totalReddit.nta;
+    const userTotal = totalUser.yta + totalUser.nta;
 
     // bar groups for clipping paths
     const redditBarGroup = g.append("g").attr("clip-path", `url(#bar-clip-r)`)
@@ -146,7 +175,8 @@ export function UserVsReddit() {
     // Reddit bar
     redditBarGroup.append("rect")
       .attr("x", 0).attr("y", y("Reddit")! + offset)
-      .attr("width", x(reddit_yta_percent)).attr("height", thickness)
+      .attr("width", 0)
+      .attr("height", thickness)
       .attr("fill", "#fca5a5")
       .on("mouseover", (event) => {
         tooltip.style("opacity", 1).style("border-color", "#fca5a5")
@@ -169,10 +199,13 @@ export function UserVsReddit() {
       .on("mouseout", (event) => {
         d3.select(event.currentTarget).transition().duration(150).attr("fill", "#fca5a5");
         tooltip.style("opacity", 0);
-      });
+      })
+      .transition().duration(800).ease(d3.easeCubicIn)
+      .attr("width", x(reddit_yta_percent));
     redditBarGroup.append("rect")
       .attr("x", x(reddit_yta_percent)).attr("y", y("Reddit")! + offset)
-      .attr("width", x(reddit_nta_percent)).attr("height", thickness)
+      .attr("width", 0)
+      .attr("height", thickness)
       .attr("fill", "#86efac")
       .on("mouseover", (event) => {
         tooltip.style("opacity", 1).style("border-color", "#86efac")
@@ -195,12 +228,15 @@ export function UserVsReddit() {
       .on("mouseout", (event) => {
         d3.select(event.currentTarget).transition().duration(150).attr("fill", "#86efac");
         tooltip.style("opacity", 0);
-      });
+      })
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+      .attr("width", x(reddit_nta_percent));
 
     // User bar
     userBarGroup.append("rect")
       .attr("x", 0).attr("y", y("Users")! + offset)
-      .attr("width", x(user_yta_percent)).attr("height", thickness)
+      .attr("width", 0)
+      .attr("height", thickness)
       .attr("fill", "#fca5a5")
       .on("mouseover", (event) => {
         tooltip.style("opacity", 1).style("border-color", "#fca5a5")
@@ -223,10 +259,13 @@ export function UserVsReddit() {
       .on("mouseout", (event) => {
         d3.select(event.currentTarget).transition().duration(150).attr("fill", "#fca5a5");
         tooltip.style("opacity", 0);
-      });
+      })
+      .transition().duration(800).ease(d3.easeCubicIn)
+      .attr("width", x(user_yta_percent));
     userBarGroup.append("rect")
       .attr("x", x(user_yta_percent)).attr("y", y("Users")! + offset)
-      .attr("width", x(user_nta_percent)).attr("height", thickness)
+      .attr("width", 0)
+      .attr("height", thickness)
       .attr("fill", "#86efac")
       .on("mouseover", (event) => {
         tooltip.style("opacity", 1).style("border-color", "#86efac")
@@ -249,7 +288,9 @@ export function UserVsReddit() {
       .on("mouseout", (event) => {
         d3.select(event.currentTarget).transition().duration(150).attr("fill", "#86efac");
         tooltip.style("opacity", 0);
-      });
+      })
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+      .attr("width", x(user_nta_percent));
 
 
     // Text Labels for each bar
@@ -289,34 +330,112 @@ export function UserVsReddit() {
     const y2 = y("Users")! + offset + thickness / 2;
     const yAvg = (y1 + y2)/2
 
-    // Line pointing for the shift
-    g.append("line")
-      .attr("x1", x1).attr("y1", yAvg)
-      .attr("x2", x2).attr("y2", yAvg)
-      .attr("stroke", "#6b7280")
-      .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", "4 3")
-      .attr("marker-end", "url(#arrow)");
+    // Only render comparison when data could be found for both
+    if (redditTotal > 0 && userTotal > 0) {
+      // Line pointing for the shift
+      g.append("line")
+        .attr("x1", x1).attr("y1", yAvg)
+        .attr("x2", x1).attr("y2", yAvg)
+        .attr("stroke", "#6b7280")
+        .attr("stroke-width", 1.5)
+        .attr("opacity", 0)
+        .attr("stroke-dasharray", "4 3")
+        .attr("marker-end", "url(#arrow)")
+        .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+          .attr("x2", x2)
+          .attr("opacity", 1);
 
-    // markers for the yta/nta junctions
-    g.append("line")
-      .attr("x1", x1).attr("y1", y1+thickness/2)
-      .attr("x2", x1).attr("y2", y2-thickness/1.2)
-      .attr("stroke", "#6b7280")
-      .attr("stroke-width", 1.5);
-    g.append("line")
-      .attr("x1", x2).attr("y1", y1+thickness/1.2)
-      .attr("x2", x2).attr("y2", y2-thickness/2)
-      .attr("stroke", "#6b7280")
-      .attr("stroke-width", 1.5);
+      // markers for the yta/nta junctions
+      g.append("line")
+        .attr("x1", x1).attr("y1", y1+thickness/2)
+        .attr("x2", x1).attr("y2", y1+thickness/2)
+        .attr("stroke", "#6b7280")
+        .attr("stroke-width", 1.5)
+        .attr("opacity", 0)
+        .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+          .attr("y2", y2-thickness/1.2)
+          .attr("opacity", 1);;
+      g.append("line")
+        .attr("x1", x2).attr("y1", y2-thickness/2)
+        .attr("x2", x2).attr("y2", y2-thickness/2)
+        .attr("stroke", "#6b7280")
+        .attr("stroke-width", 1.5)
+        .attr("opacity", 0)
+        .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+          .attr("y1", y1+thickness/1.2)
+          .attr("opacity", 1);
+      g.append("text")
+        .attr("x", (x1+x2)/2).attr("y", yAvg-20)
+        .attr("dy", "0.35em").attr("text-anchor", "middle")
+        .attr("opacity", 0)
+        .text(`${verdictShift?.toFixed(2)}%`)
+        .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+          .attr("opacity", 1);
+    }
+
+    // YTA/NTA Labels on bars
+    // Labels only show with sufficient percent
+    if (reddit_yta_percent > 0.1)
     g.append("text")
-      .attr("x", (x1+x2)/2).attr("y", yAvg-20)
+      .attr("x", x(reddit_yta_percent) / 2).attr("y", y1)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .text(`${verdictShift?.toFixed(2)}%`)
+      .attr("fill", "#991b1b").attr("font-size", 16)
+      .text(`YTA`)
+      .attr("opacity", 0)
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+        .attr("opacity", 1);
+    if (reddit_nta_percent > 0.1)
+    g.append("text")
+      .attr("x", x(reddit_yta_percent) + x(reddit_nta_percent) / 2).attr("y", y1)
+      .attr("dy", "0.35em").attr("text-anchor", "middle")
+      .attr("fill", "#166534").attr("font-size", 16)
+      .text(`NTA`)
+      .attr("opacity", 0)
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+        .attr("opacity", 1);
 
+    if (user_yta_percent > 0.1)
+    g.append("text")
+      .attr("x", x(user_yta_percent) / 2).attr("y", y2)
+      .attr("dy", "0.35em").attr("text-anchor", "middle")
+      .attr("fill", "#991b1b").attr("font-size", 16)
+      .text(`YTA`)
+      .attr("opacity", 0)
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+        .attr("opacity", 1);
+    if (user_nta_percent > 0.1)
+    g.append("text")
+      .attr("x", x(user_yta_percent) + x(user_nta_percent) / 2).attr("y", y2)
+      .attr("dy", "0.35em").attr("text-anchor", "middle")
+      .attr("fill", "#166534").attr("font-size", 16)
+      .text(`NTA`)
+      .attr("opacity", 0)
+      .transition().delay(800).duration(800).ease(d3.easeCubicOut)
+        .attr("opacity", 1);
+
+
+    // Labels for if no data could be found
+    if (redditTotal === 0) {
+      svg.append("text")
+        .attr("x", barWidth / 2 + MARGIN.left)
+        .attr("y", y1)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#9ca3af")
+        .attr("font-size", 14)
+        .text("No verdict data found for Reddit");
+    }
+    
+    if (userTotal === 0) {
+      svg.append("text")
+        .attr("x", barWidth / 2 + MARGIN.left)
+        .attr("y", y2)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#9ca3af")
+        .attr("font-size", 14)
+        .text("No verdict data found for Users");
+    }
   }, [data, verdictShift]); // Data dependencies need to go here
 
-  console.log(data)
 
   return (
   <div className="flex flex-col gap-2 h-full">
@@ -333,8 +452,47 @@ export function UserVsReddit() {
       )}
     </h1>
     <svg ref={svgRef} className="w-full" style={{ height: "75%" }} />
+    {/* Keyword filtering */}
     <div className="flex flex-col gap-2 px-2">
-      {/* Static info breakdown goes here */}
+      <p className="text-center text-gray-900">Curious how your situation would be broken down? Describe it here to filter by similar posts:</p>
+      <form onSubmit={handleSearch} className="flex flex-col gap-2">
+        <textarea
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Describe your situation..."
+          rows={3}
+          className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-orange-300"
+        />
+        <button
+          type="submit"
+          disabled={isSearching || !query.trim()}
+          className="self-end px-5 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isSearching ? "Searching..." : "Find Similar Posts"}
+        </button>
+      </form>
+      {searchResults && searchResults.length > 0 && (
+        <div className="flex flex-col gap-2 mt-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">We found {numResults} similar posts! Here are the five best matches:</p>
+          {searchResults.map((post, i) => {
+            const ytaPct = Math.round((post.reddit_verdicts.yta / (post.reddit_verdicts.yta + post.reddit_verdicts.nta)) * 100);
+            const majority = ytaPct > 50 ? "YTA" : "NTA";
+            return (
+              <div key={post.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                <span className="text-xs text-gray-400 w-4 shrink-0">{i + 1}</span>
+                <p className="flex-1 text-sm text-gray-800 truncate">{post.title}</p>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                  majority === "YTA" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                }`}>{majority === "YTA" ? ytaPct : 100-ytaPct} {majority}%</span>
+                {post.permalink && (
+                  <a href={`https://reddit.com${post.permalink}`} target="_blank" rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-gray-600 text-xs shrink-0">↗</a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   </div>
   );

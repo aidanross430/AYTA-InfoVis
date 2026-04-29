@@ -46,4 +46,7 @@ def init_db():
                 verdict     TEXT NOT NULL,
                 created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
             );
+                           
+            CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts
+            USING fts5(id UNINDEXED, title, body, tokenize='porter ascii')
         """)
