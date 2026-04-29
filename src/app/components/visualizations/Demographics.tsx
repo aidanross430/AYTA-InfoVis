@@ -31,6 +31,7 @@ export function DemographicGraph() {
   const [data, setData] = useState<PostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasEntered, setHasEntered] = useState(false);
 
   // Load our data first
   useEffect(() => {
@@ -49,8 +50,24 @@ export function DemographicGraph() {
     load();
   }, []);
 
+  // Only do graph stuff once the user has scrolled to this visualization
   useEffect(() => {
     if (!svgRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasEntered(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(svgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!svgRef.current || !hasEntered) return;
 
     const svg = d3.select(svgRef.current);
 
@@ -220,7 +237,7 @@ export function DemographicGraph() {
 
     // Make sure to get rid of the tooltip
     return () => { tooltip.remove(); };
-  }, [data]);
+  }, [data, hasEntered]);
 
   return (
     <svg

@@ -35,6 +35,7 @@ export function UserVsReddit() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PostSummary[] | null>(null);
   const [numResults, setNumResults] = useState<number>();
+  const [hasEntered, setHasEntered] = useState(false);
 
   const handleClear = async () => {
     setQuery("");
@@ -101,10 +102,25 @@ export function UserVsReddit() {
     load();
   }, []);
 
-  
+  // Only do graph stuff once the user has scrolled to this visualization
+  useEffect(() => {
+    if (!svgRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasEntered(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(svgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!data) return;
-    if (!svgRef.current) return;
+    if (!svgRef.current || !hasEntered) return;
 
     const svg = d3.select(svgRef.current);
 
@@ -451,7 +467,7 @@ export function UserVsReddit() {
 
     // Make sure to get rid of the tooltip
     return () => { tooltip.remove(); };
-  }, [data, verdictShift]); // Data dependencies need to go here
+  }, [data, verdictShift, hasEntered]); // Data dependencies need to go here
 
 
   return (
