@@ -448,6 +448,9 @@ export function UserVsReddit() {
         .attr("font-size", 14)
         .text("No verdict data found for Users");
     }
+
+    // Make sure to get rid of the tooltip
+    return () => { tooltip.remove(); };
   }, [data, verdictShift]); // Data dependencies need to go here
 
 
