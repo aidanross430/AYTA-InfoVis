@@ -498,7 +498,7 @@ export function UserVsReddit() {
                   <p className="flex-1 text-sm text-gray-800 truncate">{post.title}</p>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
                     majority === "YTA" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                  }`}>{majority === "YTA" ? ytaPct : 100-ytaPct} {majority}%</span>
+                  }`}>{majority === "YTA" ? ytaPct : 100-ytaPct}% {majority}</span>
                   {post.permalink && (
                     <a href={`https://reddit.com${post.permalink}`} target="_blank" rel="noopener noreferrer"
                       className="text-gray-400 hover:text-gray-600 text-xs shrink-0">↗</a>
