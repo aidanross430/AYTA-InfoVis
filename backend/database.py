@@ -1,7 +1,8 @@
 import sqlite3
+import os
 from contextlib import contextmanager
 
-DB_PATH = "ayta.db"
+DB_PATH = os.getenv("DATABASE_PATH", "ayta.db")
 
 
 def get_connection():
