@@ -1,6 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { useEffect, useState, useRef } from "react";
-import * as d3 from "d3";
+import { useEffect, useState } from "react";
 
 type Scenario = {
   post_data: Post;
@@ -30,13 +29,17 @@ type VerdictPieChartProps = {
   scenario: Scenario;
 };
 
-// The frame of the svg element we make here
-const WIDTH = 600;
-const HEIGHT = 300;
-const MARGIN = { top: 20, right: 20, bottom: 40, left: 50 };
-
 export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: VerdictPieChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const [vh, setVh] = useState(window.innerHeight);
+
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const chartHeight = Math.round(vh * 0.32);
+  const outerRadius = Math.round(vh * 0.10);
 
   console.log(scenario);
   const chartData = [
@@ -44,28 +47,8 @@ export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: Verd
     { name: "NTA (Not The Asshole)", value: ntaPercentage, color: "#22c55e" },
   ];
 
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-
-    // Clear any previous render before redrawing
-    svg.selectAll("*").remove();
-
-    // Create graph g and append it to the svg element
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
-    g;
-
-    // Start coding Visualization here!
-    
-  
-  }, [ytaPercentage, ntaPercentage]); // Data dependencies need to go here
-
   return (
-    // 'recharts' pichart code from mockup
-    <ResponsiveContainer width="100%" height={500}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <PieChart>
         <Pie
           data={chartData}
@@ -73,7 +56,7 @@ export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: Verd
           cy="50%"
           labelLine={false}
           label={({ value }) => `${value}%`}
-          outerRadius={200}
+          outerRadius={outerRadius}
           fill="#8884d8"
           dataKey="value"
         >
