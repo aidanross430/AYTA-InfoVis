@@ -22,7 +22,7 @@ type PostSummary = {
 
 
 // The frame of the svg element we make here
-const MARGIN = { top: 20, right: 20, bottom: 50, left: 50 };
+const MARGIN = { top: 20, right: 60, bottom: 50, left: 50 };
 
 export function DemographicGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -36,6 +36,7 @@ export function DemographicGraph() {
   // Graph control usestates/toggles
   const [showMale, setShowMale] = useState(true);
   const [showFemale, setShowFemale] = useState(true);
+  const [viewMode, setViewMode] = useState<"both" | "lines" | "bars">("both");
   const hasAnimated = useRef(false);
   // Also need: Show/ no show bar graph
 
@@ -167,6 +168,41 @@ export function DemographicGraph() {
       .selectAll("text")
         .style("font-size", "16px");
 
+    // Right Y-axis shows the total count of posts in each of the bins
+    const maxCount = d3.max([...dataBySexAndAge.values()].flat(), d => d.count) ?? 0;
+    const yCount = d3.scaleLinear()
+      .domain([0, maxCount])
+      .range([innerHeight, 0]);
+
+    g.append("g")
+      .attr("transform", `translate(${innerWidth}, 0)`)
+      .call(d3.axisRight(yCount).ticks(5))
+      .selectAll("text")
+        .style("font-size", "14px");
+
+    // Calculate the bar width from the bin sizes, with 2 pixels of padding on each side
+    const binPx = x(MIN_AGE + BIN_SIZE) - x(MIN_AGE);
+    const barW = (binPx - 4) / 2;
+
+    // Draw bars per sex BEFORE lines so lines render on top
+    for (const [sex, lineData] of dataBySexAndAge) {
+      const xOffset = sex === "M" ? -barW - 1 : 1;
+
+      g.selectAll(`.bar-${sex}`)
+        .data(lineData)
+        .join("rect")
+        .attr("class", `bar-${sex}`)
+        .attr("x", d => x(d.age) + xOffset)
+        .attr("width", barW)
+        .attr("fill", colorScale(sex))
+        .attr("fill-opacity", 0.40)
+        .attr("y", innerHeight)
+        .attr("height", 0)
+        .transition().duration(1000).ease(d3.easeCubicOut)
+        .attr("y", d => yCount(d.count))
+        .attr("height", d => innerHeight - yCount(d.count));
+    }
+
     // Line generator
     const line = d3.line<{ age: number; ytaPct: number }>()
       .defined(d => d.ytaPct !== null)
@@ -237,27 +273,31 @@ export function DemographicGraph() {
           d3.select(event.currentTarget).attr("r", 7);
         })
         .transition().delay(1500).duration(800).ease(d3.easeCubicOut)
-        .attr("opacity", 1);
+        .attr("opacity", 1)
+        .on("end", (_, i) => { if (i === 0) hasAnimated.current = true; });
     }
 
-    hasAnimated.current = true;
-
-    // Make sure to get rid of the tooltip
     return () => { tooltip.remove(); };
   }, [data, hasEntered]);
 
-  // Handle toggle visibility separately so only the targeted line fades
+  // Handle toggle visibility — each effect owns one sex, both sex toggle and viewMode feed in
   useEffect(() => {
     if (!svgRef.current || !hasAnimated.current) return;
     const svg = d3.select(svgRef.current);
-    svg.selectAll(".line-M, .dot-M").interrupt().transition().duration(400).attr("opacity", showMale ? 1 : 0);
-  }, [showMale]);
+    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) =>
+      sel.interrupt().transition().duration(400).attr("opacity", show ? 1 : 0);
+    svg.selectAll<d3.BaseType, unknown>(".line-M, .dot-M").call(t(showMale && viewMode !== "bars"));
+    svg.selectAll<d3.BaseType, unknown>(".bar-M").call(t(showMale && viewMode !== "lines"));
+  }, [showMale, viewMode]);
 
   useEffect(() => {
     if (!svgRef.current || !hasAnimated.current) return;
     const svg = d3.select(svgRef.current);
-    svg.selectAll(".line-F, .dot-F").interrupt().transition().duration(400).attr("opacity", showFemale ? 1 : 0);
-  }, [showFemale]);
+    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) =>
+      sel.interrupt().transition().duration(400).attr("opacity", show ? 1 : 0);
+    svg.selectAll<d3.BaseType, unknown>(".line-F, .dot-F").call(t(showFemale && viewMode !== "bars"));
+    svg.selectAll<d3.BaseType, unknown>(".bar-F").call(t(showFemale && viewMode !== "lines"));
+  }, [showFemale, viewMode]);
 
   return (
     <div className="flex flex-col justify-center items-center gap-4 w-full h-full">
@@ -287,6 +327,21 @@ export function DemographicGraph() {
         >
           Show Female
         </button>
+
+        <div className="flex rounded-full border-2 border-orange-300 overflow-hidden text-sm font-semibold">
+          {(["both", "lines", "bars"] as const).map((mode, i) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-4 py-1.5 transition-all capitalize ${
+                i > 0 ? "border-l border-orange-300" : ""
+              } ${viewMode === mode ? "bg-orange-600 text-white" : "bg-white text-orange-600 hover:bg-orange-100"}`}
+            >
+              {mode === "both" ? "Both" : mode === "lines" ? "Lines" : "Bars"}
+            </button>
+          ))}
+        </div>
+
       </div>
     </div>
   );
