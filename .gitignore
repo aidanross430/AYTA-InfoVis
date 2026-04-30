@@ -24,8 +24,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# database files
+
+# database files — commit the compressed version only
 *.db
+!backend/ayta.db.gz
 
 # Python
 __pycache__

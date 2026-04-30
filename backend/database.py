@@ -1,8 +1,21 @@
 import sqlite3
 import os
+import gzip
+import shutil
 from contextlib import contextmanager
 
 DB_PATH = os.getenv("DATABASE_PATH", "ayta.db")
+BUNDLED_GZ = os.path.join(os.path.dirname(__file__), "ayta.db.gz")
+
+
+def _seed_if_missing():
+    if os.path.exists(DB_PATH) or not os.path.exists(BUNDLED_GZ):
+        return
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    print(f"Decompressing database to {DB_PATH} ...")
+    with gzip.open(BUNDLED_GZ, "rb") as src, open(DB_PATH, "wb") as dst:
+        shutil.copyfileobj(src, dst)
+    print("Seed complete.")
 
 
 def get_connection():
@@ -22,6 +35,7 @@ def get_db():
 
 
 def init_db():
+    _seed_if_missing()
     with get_db() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS posts (
