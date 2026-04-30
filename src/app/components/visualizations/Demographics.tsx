@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { useEffect, useState, useRef } from "react";
+import { TakeawayCarousel, type Takeaway } from "../TakeawayCarousel";
 
 type VerdictCounts = {
   yta: number;
@@ -23,6 +24,24 @@ type PostSummary = {
 
 // The frame of the svg element we make here
 const MARGIN = { top: 20, right: 80, bottom: 50, left: 70 };
+
+// Our hardcoded analysis of the viz
+const TAKEAWAYS: Takeaway[] = [
+  {
+    heading: "YTA Trends",
+    body: `
+    Generally, the older the poster is the more likely it is users will find them to be an asshole.
+    Additionally, the youngest and oldest posters are far more likely to be deemed assholes.`,
+  },
+  {
+    heading: "Sex Influence on YTA",
+    body: "Users indicating they are male are more likely to be deemed assholes than female users.",
+  },
+  {
+    heading: "Post Distribution",
+    body: "Most posts come from users aged around 25-30 years old. Additionally, there are far more female posters than male.",
+  },
+];
 
 export function DemographicGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -404,8 +423,13 @@ export function DemographicGraph() {
           ))}
         </div>
 
-        {/* Carousel for data insights */}
       </div>
+
+    <div className="pt-8 items-center justify-center flex flex-col gap-4">
+      <p className="text-center text-gray-800">What does this chart show us?</p>
+      <TakeawayCarousel takeaways={TAKEAWAYS} />
+    </div>
+
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { useEffect, useState, useRef } from "react";
+import { TakeawayCarousel, Takeaway } from "../TakeawayCarousel";
 
 type VerdictCounts = {
   yta: number;
@@ -21,7 +22,27 @@ type PostSummary = {
 };
 
 // The frame of the svg element we make here
-const MARGIN = { top: 10, right: 100, bottom: 50, left: 100 };
+const MARGIN = { top: 5, right: 100, bottom: 50, left: 100 };
+
+// Our hardcoded analysis of the viz
+const TAKEAWAYS: Takeaway[] = [
+  {
+    heading: "Difference in Sample Sizes",
+    body: "We have a lot less User data than Reddit data, which could contribute to sampling errors.",
+  },
+  {
+    heading: "Influence from Others",
+    body: "Before making a verdict, users on Reddit probably read others' comments to see how they react.",
+  },
+  {
+    heading: "More Context",
+    body: `
+    Our app only provides players the posts title, and looking at the original's post remains optional.
+    Future plans include recording if the player looks at the original post for more context, and observing the effect that might have on their verdicts.
+    `,
+  },
+];
+
 
 export function UserVsReddit() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -177,7 +198,6 @@ export function UserVsReddit() {
       .domain(["Reddit", "Users"])
       .range([0, barHeight])
       .paddingInner(0.1)   // gap between bars as a fraction of step size
-      .paddingOuter(0.5)   // top/bottom margin — 0.5 centers the group
     ;
 
     // x-axis
@@ -484,6 +504,12 @@ export function UserVsReddit() {
         </>
       )}
     </h1>
+
+    <div className="pt-8 items-center justify-center flex flex-col gap-4">
+      <p className="text-center text-gray-800">What might be causing the differences in verdicts?</p>
+      <TakeawayCarousel takeaways={TAKEAWAYS} />
+    </div>
+
     <svg ref={svgRef} className="w-full" style={{ height: "75%" }} />
     {/* Keyword filtering */}
     <div className="flex flex-col gap-2 px-2">
