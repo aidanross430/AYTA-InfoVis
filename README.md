@@ -25,11 +25,11 @@ cd \backend
 pip install -r requirements.txt
 ```
 
-### Run the database initialization script
-This step will create the ayta.db sqlite database used to store orur processed data and collected user responses. It can easily be configured by running the one-time script "import_data.py" in the backend folder. It takes in the downloaded sqlite file from the Kaggle dataset.
+### Extract the database file
+The default database file is compressed into ayta.db.gz. Extract this file, and make sure the extracted ayta.db file is located in the backend directory.
 ```bash
-cd \backend
-python .\import_data.py <path\to\AmItheAsshole.sqlite>       
+# Should look like the following:
+\backend\ayta.db
 ```
 
 ### Run the app
