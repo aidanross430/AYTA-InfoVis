@@ -246,7 +246,7 @@ export function DemographicGraph() {
         .attr("x", d => x(d.age) + xOffset)
         .attr("width", barW)
         .attr("fill", colorScale(sex))
-        .attr("opacity", 0.40)
+        .attr("fill-opacity", 0.40)
         .attr("y", innerHeight)
         .attr("height", 0)
         .on("mouseover", (event, d) => {
@@ -256,7 +256,7 @@ export function DemographicGraph() {
               <div style="font-size:12px">YTA: ${d.ytaPct.toFixed(1)}%</div>
               <div style="font-size:12px">${d.count} posts</div>
             `);
-          d3.select(event.currentTarget).attr("opacity", 0.8);
+          d3.select(event.currentTarget).attr("fill-opacity", 0.8);
         })
         .on("mousemove", (event) => {
           const node = tooltip.node() as HTMLElement;
@@ -266,7 +266,7 @@ export function DemographicGraph() {
         })
         .on("mouseout", (event) => {
           tooltip.style("opacity", 0);
-          d3.select(event.currentTarget).attr("opacity", 0.4);
+          d3.select(event.currentTarget).attr("fill-opacity", 0.4);
         })
         .transition().duration(1000).ease(d3.easeCubicOut)
         .attr("y", d => yCount(d.count))
