@@ -33,6 +33,12 @@ export function DemographicGraph() {
   const [error, setError] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
 
+  // Graph control usestates/toggles
+  const [showMale, setShowMale] = useState(true);
+  const [showFemale, setShowFemale] = useState(true);
+  const hasAnimated = useRef(false);
+  // Also need: Show/ no show bar graph
+
   // Load our data first
   useEffect(() => {
     async function load() {
@@ -183,25 +189,23 @@ export function DemographicGraph() {
 
     // Draw a line for M and F
     for (const [sex, lineData] of dataBySexAndAge) {
-      // Build the line!
       const path = g.append("path")
         .datum(lineData)
+        .attr("class", `line-${sex}`) // for independently targetting the two lines, for animations
         .attr("fill", "none")
         .attr("stroke", colorScale(sex))
         .attr("stroke-width", 4)
         .attr("d", line);
 
-      // Animate the line
+      // Progressive draw animation on first entry
       const totalLength = path.node()?.getTotalLength() || 0;
       path
         .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
         .attr("stroke-dashoffset", totalLength)
-        .transition()
-        .duration(2000)
-        .ease(d3.easeCubicInOut)
+        .transition().duration(2000).ease(d3.easeCubicInOut)
         .attr("stroke-dashoffset", 0);
 
-      // DMarkers for each data point, with tooltips on hover
+      // Dot markers for each data point, with tooltips on hover
       g.selectAll(`.dot-${sex}`)
         .data(lineData)
         .join("circle")
@@ -232,17 +236,58 @@ export function DemographicGraph() {
           tooltip.style("opacity", 0);
           d3.select(event.currentTarget).attr("r", 7);
         })
-        .transition().delay(1500).duration(800).ease(d3.easeCubicOut).attr("opacity", 1);
+        .transition().delay(1500).duration(800).ease(d3.easeCubicOut)
+        .attr("opacity", 1);
     }
+
+    hasAnimated.current = true;
 
     // Make sure to get rid of the tooltip
     return () => { tooltip.remove(); };
   }, [data, hasEntered]);
 
+  // Handle toggle visibility separately so only the targeted line fades
+  useEffect(() => {
+    if (!svgRef.current || !hasAnimated.current) return;
+    const svg = d3.select(svgRef.current);
+    svg.selectAll(".line-M, .dot-M").interrupt().transition().duration(400).attr("opacity", showMale ? 1 : 0);
+  }, [showMale]);
+
+  useEffect(() => {
+    if (!svgRef.current || !hasAnimated.current) return;
+    const svg = d3.select(svgRef.current);
+    svg.selectAll(".line-F, .dot-F").interrupt().transition().duration(400).attr("opacity", showFemale ? 1 : 0);
+  }, [showFemale]);
+
   return (
-    <svg
-      ref={svgRef}
-      className="w-full h-auto"  style={{height: '75%'}}
-    />
+    <div className="flex flex-col justify-center items-center gap-4 w-full h-full">
+      <svg
+        ref={svgRef}
+        className="w-full h-auto"  style={{width: '80%', height: '60%'}}
+      />
+      {/* Graph control buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowMale(v => !v)}
+          className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${
+            showMale
+              ? "bg-blue-400 border-blue-400 text-white"
+              : "bg-white border-blue-400 text-blue-400"
+          }`}
+        >
+          Show Male
+        </button>
+        <button
+          onClick={() => setShowFemale(v => !v)}
+          className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${
+            showFemale
+              ? "bg-pink-400 border-pink-400 text-white"
+              : "bg-white border-pink-400 text-pink-400"
+          }`}
+        >
+          Show Female
+        </button>
+      </div>
+    </div>
   );
 }
