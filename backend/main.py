@@ -11,9 +11,14 @@ import random
 
 app = FastAPI(title="AYTA API")
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",              # Vite dev server
+    "https://aidanross430.github.io",     # GitHub Pages
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
