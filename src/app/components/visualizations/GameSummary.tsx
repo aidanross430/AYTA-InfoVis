@@ -46,7 +46,12 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
     if (!svgRef.current) return;
     const width = svgRef.current.getBoundingClientRect().width;
     const height = svgRef.current.getBoundingClientRect().height;
-    const margin = { top: 5, right: 20, bottom: 5, left: 20 };
+    const margin = {
+      top:    Math.max(3, height * 0.05),
+      bottom: Math.max(3, height * 0.05),
+      left:   Math.max(8, width  * 0.03),
+      right:  Math.max(8, width  * 0.03),
+    };
 
     // Tooltip div
     const tooltip = d3.select("body").append("div")
@@ -143,18 +148,20 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
       });
 
     // Labels only show with sufficient percent
+    const labelFontSize = Math.max(9, Math.min(14, barHeight * 0.18));
+
     if (scenario.yta_percentage > 0.1)
     g.append("text")
       .attr("x", ytaWidth / 2).attr("y", barHeight / 2)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#991b1b").attr("font-size", 11)
+      .attr("fill", "#991b1b").attr("font-size", labelFontSize)
       .text(`YTA`);
 
     if (scenario.nta_percentage > 0.1)
     g.append("text")
       .attr("x", ytaWidth + ntaWidth / 2).attr("y", barHeight / 2)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#166534").attr("font-size", 11)
+      .attr("fill", "#166534").attr("font-size", labelFontSize)
       .text(`NTA`);
 
   }, [scenario]);
@@ -199,10 +206,10 @@ export function GameSummary({ scenarios, score, onRestart }: GameSummaryProps) {
   // Highlights: most/least controversial, worst disagreement
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full h-full">
 
       {/* Card 1 — Aggregate Score */}
-      <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">
+      <div className="shrink-0 bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">
         <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Times you voted with the majority:</p>
         {/* Displaying the user's final score: */}
         <p className="text-6xl font-bold text-gray-800 mb-1">
@@ -211,10 +218,9 @@ export function GameSummary({ scenarios, score, onRestart }: GameSummaryProps) {
       </div>
 
       {/* Card 2 — Per-Scenario Breakdown */}
-      <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+      <div className="shrink-0 flex-1 min-h-0 flex flex-col bg-gray-50 rounded-2xl p-6 border border-gray-200">
         <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Round by Round</p>
-        {/* Create a scrollable sub section */}
-        <div className="flex flex-col gap-4 overflow-y-auto max-h-100 scrollbar-hide">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto scrollbar-hide">
           {scenarios.map((scenario, index) => (
             <ScenarioCard key={scenario.post_data.id} scenario={scenario} index={index} />
           ))}
@@ -222,7 +228,7 @@ export function GameSummary({ scenarios, score, onRestart }: GameSummaryProps) {
       </div>
 
       {/* Restart */}
-      <div className="text-center">
+      <div className="shrink-0 text-center">
         <Button onClick={onRestart} size="lg" className="bg-gray-900 hover:bg-gray-800 text-white px-8">
           <RotateCcw className="w-5 h-5 mr-2" />
           Play Again

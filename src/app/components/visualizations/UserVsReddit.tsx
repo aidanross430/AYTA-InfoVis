@@ -22,8 +22,6 @@ type PostSummary = {
   permalink: string | null;
 };
 
-// The frame of the svg element we make here
-const MARGIN = { top: 5, right: 100, bottom: 50, left: 100 };
 
 // Our hardcoded analysis of the viz
 const TAKEAWAYS: Takeaway[] = [
@@ -148,6 +146,14 @@ export function UserVsReddit() {
 
     // SVG sizing
     const { width, height } = svgRef.current.getBoundingClientRect();
+    const MARGIN = {
+      top:    Math.max(5,  height * 0.04),
+      bottom: Math.max(30, height * 0.12),
+      left:   Math.max(40, width  * 0.08),
+      right:  Math.max(40, width  * 0.08),
+    };
+    const axisFontSize  = Math.max(10, Math.min(16, width  * 0.015));
+    const labelFontSize = Math.max(10, Math.min(14, height * 0.05));
     const barWidth = width - MARGIN.left - MARGIN.right;
     const barHeight = height - MARGIN.top - MARGIN.bottom;
 
@@ -355,12 +361,12 @@ export function UserVsReddit() {
       .text("Users")
 
     // X-axis percent labels
-    const xAxisVerticalPosition = y("Users")! + offset + thickness + 40; 
+    const xAxisVerticalPosition = y("Users")! + offset + thickness + Math.max(20, height * 0.08);
     g.append("g")
       .attr("transform", `translate(0, ${xAxisVerticalPosition})`)
       .call(d3.axisBottom(x).tickFormat(d => `${d}%`))
       .selectAll("text")
-        .style("font-size", "16px")
+        .style("font-size", `${axisFontSize}px`)
 
     // Making the comparison between Reddit and Users
     // Arrow head
@@ -416,7 +422,7 @@ export function UserVsReddit() {
           .attr("y1", y1+thickness/1.2)
           .attr("opacity", 1);
       g.append("text")
-        .attr("x", (x1+x2)/2).attr("y", yAvg-20)
+        .attr("x", (x1+x2)/2).attr("y", yAvg - Math.max(10, height * 0.04))
         .attr("dy", "0.35em").attr("text-anchor", "middle")
         .attr("opacity", 0)
         .text(`${verdictShift?.toFixed(2)}%`)
@@ -430,7 +436,7 @@ export function UserVsReddit() {
     g.append("text")
       .attr("x", x(reddit_yta_percent) / 2).attr("y", y1)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#991b1b").attr("font-size", 16)
+      .attr("fill", "#991b1b").attr("font-size", labelFontSize)
       .text(`YTA`)
       .attr("opacity", 0)
       .transition().delay(800).duration(800).ease(d3.easeCubicOut)
@@ -439,7 +445,7 @@ export function UserVsReddit() {
     g.append("text")
       .attr("x", x(reddit_yta_percent) + x(reddit_nta_percent) / 2).attr("y", y1)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#166534").attr("font-size", 16)
+      .attr("fill", "#166534").attr("font-size", labelFontSize)
       .text(`NTA`)
       .attr("opacity", 0)
       .transition().delay(800).duration(800).ease(d3.easeCubicOut)
@@ -449,7 +455,7 @@ export function UserVsReddit() {
     g.append("text")
       .attr("x", x(user_yta_percent) / 2).attr("y", y2)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#991b1b").attr("font-size", 16)
+      .attr("fill", "#991b1b").attr("font-size", labelFontSize)
       .text(`YTA`)
       .attr("opacity", 0)
       .transition().delay(800).duration(800).ease(d3.easeCubicOut)
@@ -458,7 +464,7 @@ export function UserVsReddit() {
     g.append("text")
       .attr("x", x(user_yta_percent) + x(user_nta_percent) / 2).attr("y", y2)
       .attr("dy", "0.35em").attr("text-anchor", "middle")
-      .attr("fill", "#166534").attr("font-size", 16)
+      .attr("fill", "#166534").attr("font-size", labelFontSize)
       .text(`NTA`)
       .attr("opacity", 0)
       .transition().delay(800).duration(800).ease(d3.easeCubicOut)
@@ -472,7 +478,7 @@ export function UserVsReddit() {
         .attr("y", y1)
         .attr("text-anchor", "middle")
         .attr("fill", "#9ca3af")
-        .attr("font-size", 14)
+        .attr("font-size", labelFontSize)
         .text("No verdict data found for Reddit");
     }
     
@@ -482,7 +488,7 @@ export function UserVsReddit() {
         .attr("y", y2)
         .attr("text-anchor", "middle")
         .attr("fill", "#9ca3af")
-        .attr("font-size", 14)
+        .attr("font-size", labelFontSize)
         .text("No verdict data found for Users");
     }
 
@@ -492,7 +498,7 @@ export function UserVsReddit() {
 
 
   return (
-  <div className="flex flex-col gap-2 h-full">
+  <div className="flex flex-col gap-2">
     <h1 className="text-center">
       {verdictShift !== null && (
         <>
@@ -511,7 +517,7 @@ export function UserVsReddit() {
       <TakeawayCarousel takeaways={TAKEAWAYS} />
     </div>
 
-    <svg ref={svgRef} className="w-full" style={{ height: "75%" }} />
+    <svg ref={svgRef} className="w-full" style={{ height: "40vh", minHeight: "200px" }} />
     {/* Keyword filtering */}
     <div className="flex flex-col gap-2 px-2">
       <p className="text-center text-gray-900">Curious how your situation would be broken down? Describe it here to filter by similar posts:</p>

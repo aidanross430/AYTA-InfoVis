@@ -23,8 +23,6 @@ type PostSummary = {
 };
 
 
-// The frame of the svg element we make here
-const MARGIN = { top: 20, right: 80, bottom: 70, left: 70 };
 
 // Our hardcoded analysis of the viz
 const TAKEAWAYS: Takeaway[] = [
@@ -104,6 +102,14 @@ export function DemographicGraph() {
 
     // SVG sizing
     const { width, height } = svgRef.current.getBoundingClientRect();
+    const MARGIN = {
+      top:    Math.max(15, height * 0.04),
+      bottom: Math.max(40, height * 0.12),
+      left:   Math.max(40, width  * 0.07),
+      right:  Math.max(40, width  * 0.07),
+    };
+    const axisFontSize  = Math.max(10, Math.min(16, width * 0.015));
+    const labelFontSize = Math.max(10, Math.min(14, width * 0.012));
 
     // Create graph g and append it to the svg element
     const g = svg
@@ -185,21 +191,21 @@ export function DemographicGraph() {
       .attr("transform", `translate(0, ${innerHeight})`)
       .call(d3.axisBottom(x).tickFormat(d => `${d}`))
       .selectAll("text")
-        .style("font-size", "16px");
+        .style("font-size", `${axisFontSize}px`);
 
     g.append("text")
       .attr("x", innerWidth / 2)
       .attr("y", innerHeight + MARGIN.bottom - 5)
       .attr("text-anchor", "middle")
       .attr("fill", "#6b7280")
-      .style("font-size", "14px")
+      .style("font-size", `${labelFontSize}px`)
       .text("Poster Age in Years");
 
     // Y axis for YTA percent ticks and label
     g.append("g")
       .call(d3.axisLeft(y).tickFormat(d => `${d}%`))
       .selectAll("text")
-        .style("font-size", "16px");
+        .style("font-size", `${axisFontSize}px`);
 
     g.append("text")
       .attr("transform", "rotate(-90)")
@@ -207,7 +213,7 @@ export function DemographicGraph() {
       .attr("y", -MARGIN.left + 14)
       .attr("text-anchor", "middle")
       .attr("fill", "#6b7280")
-      .style("font-size", "14px")
+      .style("font-size", `${labelFontSize}px`)
       .text("% YTA Verdicts (Lines)");
 
     // Right Y-axis shows the total count of posts in each of the bins
@@ -220,7 +226,7 @@ export function DemographicGraph() {
       .attr("transform", `translate(${innerWidth}, 0)`)
       .call(d3.axisRight(yCount).ticks(5))
       .selectAll("text")
-        .style("font-size", "14px");
+        .style("font-size", `${labelFontSize}px`);
 
     g.append("text")
       .attr("transform", "rotate(90)")
@@ -228,7 +234,7 @@ export function DemographicGraph() {
       .attr("y", -innerWidth - MARGIN.right + 16)
       .attr("text-anchor", "middle")
       .attr("fill", "#6b7280")
-      .style("font-size", "14px")
+      .style("font-size", `${labelFontSize}px`)
       .text("Post Count (Bars)");
 
     // Calculate the bar width from the bin sizes, with 2 pixels of padding on each side
@@ -385,7 +391,7 @@ export function DemographicGraph() {
 
       <svg
         ref={svgRef}
-        className="flex-1 min-h-0"  style={{width: '90%'}}
+        className="flex-1"  style={{width: '90%', minHeight: '500px'}}
       />
       {/* Graph control buttons */}
       <div className="flex gap-3">
