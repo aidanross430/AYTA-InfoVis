@@ -11,4 +11,4 @@ export const router = createBrowserRouter([
     path: "/game",
     Component: GamePage,
   },
-]);
+], { basename: import.meta.env.BASE_URL });

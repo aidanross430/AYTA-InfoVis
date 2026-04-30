@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script>
+      // Redirect 404s back to index.html, preserving the path as a query param
+      // so the SPA router can handle it.
+      var repo = "/AYTA-InfoVis";
+      var path = window.location.pathname.slice(repo.length) || "/";
+      window.location.replace(repo + "/?path=" + encodeURIComponent(path));
+    </script>
+  </head>
+</html>
