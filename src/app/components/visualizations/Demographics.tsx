@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useState, useRef } from "react";
 import { TakeawayCarousel, type Takeaway } from "../TakeawayCarousel";
+import { API_BASE } from "../../../lib/api";
 
 type VerdictCounts = {
   yta: number;
@@ -64,7 +65,7 @@ export function DemographicGraph() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/posts/all");
+        const res = await fetch(`${API_BASE}/api/posts/all`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: PostSummary[] = await res.json();
         setData(json);
