@@ -24,8 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# database files
-*.db
 
 # Python
 __pycache__

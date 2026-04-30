@@ -1,8 +1,20 @@
 import sqlite3
 import os
+import shutil
 from contextlib import contextmanager
 
 DB_PATH = os.getenv("DATABASE_PATH", "ayta.db")
+# Bundled read-only copy committed to the repo via Git LFS
+BUNDLED_DB = os.path.join(os.path.dirname(__file__), "ayta.db")
+
+
+def _seed_if_missing():
+    if os.path.exists(DB_PATH) or not os.path.exists(BUNDLED_DB) or DB_PATH == BUNDLED_DB:
+        return
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    print(f"Seeding database to {DB_PATH} ...")
+    shutil.copy2(BUNDLED_DB, DB_PATH)
+    print("Seed complete.")
 
 
 def get_connection():
@@ -22,6 +34,7 @@ def get_db():
 
 
 def init_db():
+    _seed_if_missing()
     with get_db() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS posts (
