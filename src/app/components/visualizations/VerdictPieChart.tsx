@@ -65,31 +65,24 @@ export function VerdictPieChart({ ytaPercentage, ntaPercentage, scenario }: Verd
 
   return (
     // 'recharts' pichart code from mockup
-    // <ResponsiveContainer width="100%" height={300}>
-    //   <PieChart>
-    //     <Pie
-    //       data={chartData}
-    //       cx="50%"
-    //       cy="50%"
-    //       labelLine={false}
-    //       label={({ value }) => `${value}%`}
-    //       outerRadius={100}
-    //       fill="#8884d8"
-    //       dataKey="value"
-    //     >
-    //       {chartData.map((entry, index) => (
-    //         <Cell key={`cell-${index}`} fill={entry.color} />
-    //       ))}
-    //     </Pie>
-    //     <Legend />
-    //   </PieChart>
-    // </ResponsiveContainer>
-    <svg
-      ref={svgRef}
-      width={WIDTH}
-      height={HEIGHT}
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="w-full h-auto"
-    />
+    <ResponsiveContainer width="100%" height={500}>
+      <PieChart>
+        <Pie
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ value }) => `${value}%`}
+          outerRadius={200}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+          ))}
+        </Pie>
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
   );
 }

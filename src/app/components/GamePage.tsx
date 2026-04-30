@@ -5,6 +5,7 @@ import { VisualizationsSection } from "./VisualizationsSection";
 import { VerdictPieChart } from "./visualizations/VerdictPieChart";
 import { GameSummary } from "./visualizations/GameSummary";
 
+
 // How many posts do we show the user?
 const POST_LIMIT = 5;
 
@@ -121,8 +122,8 @@ export function GamePage() {
       setIsGameOver(true);
       return;
     }
-    setUserVote(null);
     await loadPost();
+    setUserVote(null);
   };
 
   const handleRestart = () => {
@@ -136,6 +137,11 @@ export function GamePage() {
   const percentages = currentPost
     ? computePercentages(currentPost)
     : { yta_percentage: 50, nta_percentage: 50 };
+
+  const chartData = [
+    { name: "YTA (You're The Asshole)", value: percentages.yta_percentage, color: "#ef4444" },
+    { name: "NTA (Not The Asshole)", value: percentages.nta_percentage, color: "#22c55e" },
+  ];
 
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-gradient-to-br from-orange-400 via-pink-400 to-red-400">
@@ -155,7 +161,7 @@ export function GamePage() {
 
       {/* Main game area */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
+        <div className="w-full max-w-6xl bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12">
           {isGameOver ? (
             <GameSummary scenarios={scenarios} score={score} onRestart={handleRestart} />
           ) : fetchError ? (
@@ -163,18 +169,29 @@ export function GamePage() {
               <p className="text-red-600 mb-4">{fetchError}</p>
               <Button onClick={loadPost}>Retry</Button>
             </div>
-          ) : isLoading || !currentPost ? (
+          ) : !currentPost ? (
             <div className="text-center text-gray-500">Loading scenario...</div>
           ) : !userVote ? (
             <>
               {/* Question */}
               <div className="text-center mb-12">
-                <p className="text-2xl md:text-4xl font-semibold text-gray-900 mb-8">
-                  "{currentPost.title}"
-                </p>
                 <p className="text-sm text-gray-600 mb-4">
                   Scenario {scenarios.length + 1}
                 </p>
+                <p className="text-2xl md:text-4xl font-semibold text-gray-900 mb-3">
+                  "{currentPost.title}"
+                </p>
+                {/*  */}
+                {currentPost.permalink && (
+                  <a
+                    href={`https://reddit.com${currentPost.permalink}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-400 hover:text-gray-600 underline"
+                  >
+                    View on Reddit
+                  </a>
+                )}
               </div>
 
               {/* Vote buttons */}
