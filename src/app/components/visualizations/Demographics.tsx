@@ -23,7 +23,7 @@ type PostSummary = {
 
 
 // The frame of the svg element we make here
-const MARGIN = { top: 20, right: 80, bottom: 50, left: 70 };
+const MARGIN = { top: 20, right: 80, bottom: 70, left: 70 };
 
 // Our hardcoded analysis of the viz
 const TAKEAWAYS: Takeaway[] = [
@@ -373,7 +373,7 @@ export function DemographicGraph() {
   }, [showFemale, viewMode]);
 
   return (
-    <div className="flex flex-col py-12 items-center gap-4 w-full h-full">
+    <div className="flex flex-col py-4 items-center gap-4 w-full h-full">
       <h1 className="text-center">Post Distribution by Age and Sex</h1>
       {/* Graph Title and data label */}
       {totalPosts > 0 && (
@@ -384,7 +384,7 @@ export function DemographicGraph() {
 
       <svg
         ref={svgRef}
-        className="w-full h-auto"  style={{width: '90%', height: '60%'}}
+        className="flex-1 min-h-0"  style={{width: '90%'}}
       />
       {/* Graph control buttons */}
       <div className="flex gap-3">

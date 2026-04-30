@@ -6,6 +6,7 @@ from database import init_db, get_db
 from models import Post, PostDetail, PostSummary, VerdictCounts, VerdictSubmission, StatsResponse, VerdictCount
 from typing import Optional
 import re
+import random
 
 
 app = FastAPI(title="AYTA API")
@@ -104,13 +105,30 @@ def get_all_posts(q: Optional[str] = None):
 @app.get("/api/posts/random", response_model=Post)
 def get_random_post():
     """
-    Returns all of the information from a random post in the database
+    Returns a random post. Posts are weighted to intentionally return contested posts more often,
+    in order to make the game more fun and interesting.
     """
-    # Return a random post from the database for the game.
+    contested_ratio = 0.5       # probability of drawing a contested post
+    contested_threshold = 0.3   # how close to 50/50 counts as "contested"
+
+    use_contested = random.random() < contested_ratio
+
     with get_db() as conn:
-        row = conn.execute(
-            "SELECT * FROM posts ORDER BY RANDOM() LIMIT 1"
-        ).fetchone()
+        if use_contested:
+            row = conn.execute("""
+                SELECT * FROM posts
+                WHERE (yta_count + nta_count) > 0
+                AND ABS(CAST(yta_count AS REAL) / (yta_count + nta_count) - 0.5) <= :threshold
+                ORDER BY RANDOM() LIMIT 1
+            """, {"threshold": contested_threshold}).fetchone()
+        else:
+            row = conn.execute("""
+                SELECT * FROM posts
+                WHERE (yta_count + nta_count) > 0
+                AND ABS(CAST(yta_count AS REAL) / (yta_count + nta_count) - 0.5) > :threshold
+                ORDER BY RANDOM() LIMIT 1
+            """, {"threshold": contested_threshold}).fetchone()
+
     if not row:
         raise HTTPException(status_code=404, detail="No posts in database")
     return Post(**dict(row))
