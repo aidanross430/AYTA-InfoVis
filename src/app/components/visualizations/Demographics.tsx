@@ -22,7 +22,7 @@ type PostSummary = {
 
 
 // The frame of the svg element we make here
-const MARGIN = { top: 20, right: 60, bottom: 50, left: 50 };
+const MARGIN = { top: 20, right: 80, bottom: 50, left: 70 };
 
 export function DemographicGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -37,6 +37,7 @@ export function DemographicGraph() {
   const [showMale, setShowMale] = useState(true);
   const [showFemale, setShowFemale] = useState(true);
   const [viewMode, setViewMode] = useState<"both" | "lines" | "bars">("both");
+  const [totalPosts, setTotalPosts] = useState<number>(0);
   const hasAnimated = useRef(false);
   // Also need: Show/ no show bar graph
 
@@ -134,6 +135,10 @@ export function DemographicGraph() {
       dataBySexAndAge.set(sex!, lineData);
     }
 
+    // Sum the total posts
+    const total = [...dataBySexAndAge.values()].flat().reduce((acc, d) => acc + d.count, 0);
+    setTotalPosts(total);
+
     console.log(dataBySexAndAge)
 
     // Line chart and bar chart sizing
@@ -162,11 +167,28 @@ export function DemographicGraph() {
       .selectAll("text")
         .style("font-size", "16px");
 
+    g.append("text")
+      .attr("x", innerWidth / 2)
+      .attr("y", innerHeight + MARGIN.bottom - 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#6b7280")
+      .style("font-size", "14px")
+      .text("Poster Age in Years");
+
     // Y axis for YTA percent ticks and label
     g.append("g")
       .call(d3.axisLeft(y).tickFormat(d => `${d}%`))
       .selectAll("text")
         .style("font-size", "16px");
+
+    g.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -innerHeight / 2)
+      .attr("y", -MARGIN.left + 14)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#6b7280")
+      .style("font-size", "14px")
+      .text("% YTA Verdicts (Lines)");
 
     // Right Y-axis shows the total count of posts in each of the bins
     const maxCount = d3.max([...dataBySexAndAge.values()].flat(), d => d.count) ?? 0;
@@ -179,6 +201,15 @@ export function DemographicGraph() {
       .call(d3.axisRight(yCount).ticks(5))
       .selectAll("text")
         .style("font-size", "14px");
+
+    g.append("text")
+      .attr("transform", "rotate(90)")
+      .attr("x", innerHeight / 2)
+      .attr("y", -innerWidth - MARGIN.right + 16)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#6b7280")
+      .style("font-size", "14px")
+      .text("Post Count (Bars)");
 
     // Calculate the bar width from the bin sizes, with 2 pixels of padding on each side
     const binPx = x(MIN_AGE + BIN_SIZE) - x(MIN_AGE);
@@ -195,9 +226,28 @@ export function DemographicGraph() {
         .attr("x", d => x(d.age) + xOffset)
         .attr("width", barW)
         .attr("fill", colorScale(sex))
-        .attr("fill-opacity", 0.40)
+        .attr("opacity", 0.40)
         .attr("y", innerHeight)
         .attr("height", 0)
+        .on("mouseover", (event, d) => {
+          tooltip.style("opacity", 1).style("border-color", colorScale(sex))
+            .html(`
+              <div style="font-weight:700;font-size:14px">Age ${d.age - 2.5}–${d.age + 2.5}</div>
+              <div style="font-size:12px">YTA: ${d.ytaPct.toFixed(1)}%</div>
+              <div style="font-size:12px">${d.count} posts</div>
+            `);
+          d3.select(event.currentTarget).attr("opacity", 0.8);
+        })
+        .on("mousemove", (event) => {
+          const node = tooltip.node() as HTMLElement;
+          tooltip
+            .style("left", `${event.pageX - node.offsetWidth / 2}px`)
+            .style("top", `${event.pageY - node.offsetHeight - 10}px`);
+        })
+        .on("mouseout", (event) => {
+          tooltip.style("opacity", 0);
+          d3.select(event.currentTarget).attr("opacity", 0.4);
+        })
         .transition().duration(1000).ease(d3.easeCubicOut)
         .attr("y", d => yCount(d.count))
         .attr("height", d => innerHeight - yCount(d.count));
@@ -284,8 +334,10 @@ export function DemographicGraph() {
   useEffect(() => {
     if (!svgRef.current || !hasAnimated.current) return;
     const svg = d3.select(svgRef.current);
-    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) =>
+    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) => {
       sel.interrupt().transition().duration(400).attr("opacity", show ? 1 : 0);
+      sel.style("pointer-events", show ? "all" : "none")
+    };
     svg.selectAll<d3.BaseType, unknown>(".line-M, .dot-M").call(t(showMale && viewMode !== "bars"));
     svg.selectAll<d3.BaseType, unknown>(".bar-M").call(t(showMale && viewMode !== "lines"));
   }, [showMale, viewMode]);
@@ -293,17 +345,27 @@ export function DemographicGraph() {
   useEffect(() => {
     if (!svgRef.current || !hasAnimated.current) return;
     const svg = d3.select(svgRef.current);
-    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) =>
+    const t = (show: boolean) => (sel: d3.Selection<d3.BaseType, unknown, SVGSVGElement, unknown>) => {
       sel.interrupt().transition().duration(400).attr("opacity", show ? 1 : 0);
+      sel.style("pointer-events", show ? "all" : "none");
+    };
     svg.selectAll<d3.BaseType, unknown>(".line-F, .dot-F").call(t(showFemale && viewMode !== "bars"));
     svg.selectAll<d3.BaseType, unknown>(".bar-F").call(t(showFemale && viewMode !== "lines"));
   }, [showFemale, viewMode]);
 
   return (
-    <div className="flex flex-col justify-center items-center gap-4 w-full h-full">
+    <div className="flex flex-col py-12 items-center gap-4 w-full h-full">
+      <h1 className="text-center">Post Distribution by Age and Sex</h1>
+      {/* Graph Title and data label */}
+      {totalPosts > 0 && (
+      <p className="text-sm text-gray-500">
+        Showing data from <span className="font-semibold text-gray-700">{totalPosts.toLocaleString()}</span> posts
+      </p>
+      )}
+
       <svg
         ref={svgRef}
-        className="w-full h-auto"  style={{width: '80%', height: '60%'}}
+        className="w-full h-auto"  style={{width: '90%', height: '60%'}}
       />
       {/* Graph control buttons */}
       <div className="flex gap-3">
@@ -342,6 +404,7 @@ export function DemographicGraph() {
           ))}
         </div>
 
+        {/* Carousel for data insights */}
       </div>
     </div>
   );
