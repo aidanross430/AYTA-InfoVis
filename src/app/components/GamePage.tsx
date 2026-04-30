@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ThumbsUp, ThumbsDown, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
+import { API_BASE } from "../../lib/api";
 import { VisualizationsSection } from "./VisualizationsSection";
 import { VerdictPieChart } from "./visualizations/VerdictPieChart";
 import { GameSummary } from "./visualizations/GameSummary";
@@ -65,7 +66,7 @@ export function GamePage() {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch("/api/posts/random");
+      const res = await fetch(`${API_BASE}/api/posts/random`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: Post = await res.json();
       setCurrentPost(data);
@@ -107,7 +108,7 @@ export function GamePage() {
         session_id: sessionId.current,
         verdict: vote,
       };
-      await fetch("/api/verdicts", {
+      await fetch(`${API_BASE}/api/verdicts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submission),

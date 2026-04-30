@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useState, useRef } from "react";
 import { TakeawayCarousel, Takeaway } from "../TakeawayCarousel";
+import { API_BASE } from "../../../lib/api";
 
 type VerdictCounts = {
   yta: number;
@@ -63,7 +64,7 @@ export function UserVsReddit() {
     setSearchResults(null);
     setNumResults(undefined);
     try {
-      const res = await fetch("/api/posts/all");
+      const res = await fetch(`${API_BASE}/api/posts/all`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: PostSummary[] = await res.json();
       setData(json);
@@ -79,7 +80,7 @@ export function UserVsReddit() {
     // only return 
       try {
         const params = new URLSearchParams({ q: query });
-        const res = await fetch(`/api/posts/all?${params}`);
+        const res = await fetch(`${API_BASE}/api/posts/all?${params}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: PostSummary[] = await res.json();
         setData(json);
@@ -110,7 +111,7 @@ export function UserVsReddit() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/posts/all");
+        const res = await fetch(`${API_BASE}/api/posts/all`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: PostSummary[] = await res.json();
         setData(json);
